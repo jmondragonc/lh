@@ -1,41 +1,73 @@
 # Proyecto Longhorn - Log de Desarrollo
 
+> **📊 Para la visión completa del proyecto, roadmap y arquitectura híbrida, consultar [ROADMAP.md](./ROADMAP.md)**
+
 ## Fase 1: Sistema de Ecommerce Multi-Local
 
 ### Objetivo
 Crear un sistema de ecommerce para restaurantes con múltiples locales, gestión de usuarios jerárquica y cartas personalizadas por local.
 
-### División de Desarrollo
+**🔄 ESTRATEGIA ACTUALIZADA**: Enfoque híbrido combinando implementación previa existente con nuevos desarrollos optimizados.
 
-#### GRUPO A: Infraestructura Base
+### División de Desarrollo (Actualizada con Enfoque Híbrido)
+
+#### GRUPO A: Infraestructura Base - ⚠️ PARCIALMENTE COMPLETADO
+**Lo implementado:**
 - [x] Análisis de estructura actual del proyecto Medusa
-- [x] Extensiones del modelo de datos para usuarios jerárquicos
-- [x] Modelo de locales y relaciones
+- [x] Extensiones del modelo de datos para usuarios jerárquicos (modelos Longhorn)
+- [x] Modelo de locales y relaciones (LonghornStore)
 - [x] Configuración de base de datos para nuevas entidades
 
-#### GRUPO B: Sistema de Autenticación y Roles - COMPLETADO
-- [ ] Implementación de roles jerárquicos (Super Admin, Gerente Local, Personal Local)
-- [ ] Sistema de permisos y restricciones por nivel
-- [ ] Middleware de autorización
-- [ ] Lógica de visibilidad de usuarios por jerarquía
+**Elementos híbridos pendientes:**
+- [ ] **Integración Sales Channels** - configurar canales por local del sistema anterior
+- [ ] **Integración Stock Locations** - ubicaciones físicas con direcciones reales
+- [ ] **Integración Regions** - zonas de delivery por ubicación
+- [ ] **Mapeo Sales Channels ↔ LonghornStore** - conectar ambos sistemas
+- [ ] **Migración de datos base** - trasladar configuraciones del sistema anterior
 
-#### GRUPO C: Gestión de Productos y Carta
-- [ ] Modelo de carta general
-- [ ] Modelo de carta por local
-- [ ] Relaciones entre productos generales y productos por local
-- [ ] Lógica de herencia de carta general a local
+#### GRUPO B: Sistema de Autenticación y Roles - ⚠️ PARCIALMENTE COMPLETADO
+**Lo implementado:**
+- [x] Implementación de roles jerárquicos básicos (Super Admin, Gerente Local, Personal Local)
+- [x] Sistema de permisos y restricciones por nivel (APIs básicas)
+- [x] Middleware de autorización básico
+- [x] Lógica de visibilidad de usuarios por jerarquía (básica)
 
-#### GRUPO D: UI Extensions para Medusa
-- [ ] Extensión del panel admin de Medusa
-- [ ] Menú lateral: "Usuarios" con submenús
-- [ ] Página de gestión de usuarios
-- [ ] Página de gestión de roles
-- [ ] UI para asignación de roles con diseño acorde a Medusa
+**Elementos híbridos pendientes:**
+- [ ] **Sistema de filtrado automático** - gerentes no ven Super Administradores
+- [ ] **UI Extensions maduras** - páginas de gestión ya funcionales
+- [ ] **Widgets personalizados** - componentes de MedusaJS del sistema anterior
+- [ ] **Middleware avanzado** - autorización granular del sistema anterior
+- [ ] **APIs mejoradas** - endpoints con filtrado automático integrado
+- [ ] **Panel en español** - configuración de idioma del sistema anterior
 
-#### GRUPO E: Datos Iniciales
-- [ ] Investigación de carta de Longhorn
-- [ ] Población de categorías iniciales
-- [ ] Población de productos/platos iniciales
+#### GRUPO C: Integración Híbrida - ⏳ NUEVA PRIORIDAD
+- [ ] Análisis del código anterior - revisar implementación previa
+- [ ] Migración de Sales Channels - integrar con nuestros modelos
+- [ ] Adopción de sistema de filtrado - implementar seguridad avanzada
+- [ ] Migración de UI Extensions - traer interfaces funcionales
+- [ ] Testing de integración - verificar compatibilidad
+- [ ] Actualización de APIs - híbrido de ambos enfoques
+
+#### GRUPO D: Gestión de Productos Avanzada - ⏳ REDEFINIDO
+- [ ] Modelo de carta general mejorado
+- [ ] Integración con Stock Locations para inventario
+- [ ] Sistema de herencia carta madre → local
+- [ ] APIs de gestión de productos por sede
+- [ ] Interface de gestión de menús por local
+
+#### GRUPO E: UI Extensions Completas - ⏳ ACELERADO
+- [ ] Migración de páginas ya funcionales
+- [ ] Integración con nuestros endpoints
+- [ ] Widgets personalizados actualizados
+- [ ] Sistema de métricas por sede
+- [ ] Dashboard unificado multi-local
+
+#### GRUPO F: Datos y Testing - ⏳ EXPANDIDO
+- [ ] Migración de datos del sistema anterior
+- [ ] Carta real de Longhorn poblada
+- [ ] Testing automatizado de integración
+- [ ] Documentación actualizada
+- [ ] Colección Postman híbrida
 
 ---
 
@@ -102,3 +134,52 @@ Crear un sistema de ecommerce para restaurantes con múltiples locales, gestión
 - ✅ **APLICACIÓN FUNCIONANDO**: `npm run dev` ejecuta sin errores
 - ✅ **INFRAESTRUCTURA COMPLETA**: Grupos A y B completados exitosamente
 - 🎯 **SIGUIENTE FASE**: GRUPO C - Gestión de Productos y Carta (Modelos de carta general y local)
+
+#### VERIFICACIÓN Y TESTING DE ENDPOINTS
+- ✅ **CATALOGACIÓN COMPLETA**: Revisados todos los endpoints desarrollados en Grupos A y B
+- ✅ **COLECCIÓN POSTMAN CREADA**: Archivo `Longhorn_API_Collection.postman_collection.json` generado
+- ✅ **ENDPOINTS DOCUMENTADOS**: 
+  - **Usuarios**: GET, POST, PUT, DELETE con ejemplos de cuerpos JSON
+  - **Roles de Usuario**: POST, DELETE para asignación y remoción
+  - **Roles**: GET, POST para listado y creación
+  - **Tiendas**: GET, POST para listado y creación
+  - **Autenticación**: GET para verificación de token
+- ✅ **CUERPOS JSON INCLUIDOS**: Todos los endpoints POST, PUT, DELETE tienen ejemplos realistas
+- ✅ **PARÁMETROS DOCUMENTADOS**: Todos los endpoints GET tienen sus parámetros opcionales explicados
+- ✅ **VARIABLES DE ENTORNO**: Configuradas `base_url` y `admin_token` para fácil configuración
+- ✅ **LISTO PARA TESTING**: Colección lista para importar en Postman y probar todos los endpoints
+
+#### DESCUBRIMIENTO CRÍTICO - IMPLEMENTACIÓN PREVIA IDENTIFICADA
+- 🔍 **ANÁLISIS DE SCOPE ANTERIOR**: Se identificó documentación de implementación previa avanzada
+- ✅ **SISTEMA BASE YA EXISTENTE**: UI Extensions, filtrado de seguridad, Sales Channels operativos
+- 🎯 **NUEVA ESTRATEGIA**: Enfoque híbrido combinando lo mejor de ambos sistemas
+- 📋 **INSTRUCCIONES ACTUALIZADAS**: Creado `INSTRUCCIONES_HIBRIDAS.md` con plan de integración
+- 🔄 **GRUPOS REORGANIZADOS**: GRUPO C ahora es "Integración Híbrida" como nueva prioridad
+
+#### Componentes Identificados del Sistema Anterior:
+- **UI Extensions**: Páginas de gestión de usuarios/roles operativas
+- **Filtrado de Seguridad**: Sistema avanzado donde gerentes no ven Super Administradores  
+- **Sales Channels**: Arquitectura multi-sede con Stock Locations
+- **Módulos**: Restaurant Location y User Role ya implementados
+- **APIs**: Endpoints de administración con filtrado automático
+
+#### Plan de Integración Definido:
+1. **Análisis del código anterior** - revisar implementación existente
+2. **Migración selectiva** - traer componentes maduros
+3. **Combinación inteligente** - híbrido de ambos enfoques
+4. **Testing de integración** - verificar compatibilidad
+
+#### CORRECCIÓN CRÍTICA - GRUPOS A Y B REQUIEREN ELEMENTOS HÍBRIDOS
+- 🔍 **ANÁLISIS CORRECTO**: Los Grupos A y B NO están completamente terminados
+- ⚠️ **ESTADO ACTUALIZADO**: Cambiados de "COMPLETADO" a "PARCIALMENTE COMPLETADO"
+- 🔄 **ELEMENTOS FALTANTES IDENTIFICADOS**: 
+  - **Grupo A**: Sales Channels, Stock Locations, Regions del sistema anterior
+  - **Grupo B**: Filtrado automático, UI Extensions, widgets del sistema anterior
+- 📋 **DOCUMENTACIÓN ACTUALIZADA**: ROADMAP.md y DEVELOPMENT.md corregidos
+- 🎯 **NUEVA ESTRATEGIA**: Completar elementos híbridos antes de proceder con Grupo C
+
+#### Archivos Creados
+- `Longhorn_API_Collection.postman_collection.json` - Colección completa de endpoints para testing
+- `INSTRUCCIONES_HIBRIDAS.md` - Plan completo de integración híbrida
+- `ROADMAP.md` - Visión estratégica completa del proyecto con arquitectura híbrida
+- `INSTRUCCIONES_CLAUDE_DESKTOP.md` - Instrucciones concisas para Claude Desktop
