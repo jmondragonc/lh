@@ -2,16 +2,15 @@ import {
   AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
-import LonghornStoreService from "../../../../modules/longhorn/services/store"
 
 export const GET = async (
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
-    const longhornStoreService = req.scope.resolve("longhornStoreService") as LonghornStoreService
+    const longhornService = req.scope.resolve("longhorn")
     
-    const stores = await longhornStoreService.getActiveStores()
+    const stores = await longhornService.getActiveStores()
 
     res.json({
       stores,
@@ -32,7 +31,7 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   try {
-    const longhornStoreService = req.scope.resolve("longhornStoreService") as LonghornStoreService
+    const longhornService = req.scope.resolve("longhorn")
     
     const { 
       name, 
@@ -53,7 +52,7 @@ export const POST = async (
       })
     }
 
-    const store = await longhornStoreService.createStore({
+    const store = await longhornService.createStore({
       name,
       code,
       description,

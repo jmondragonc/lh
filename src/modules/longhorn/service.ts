@@ -1,10 +1,26 @@
 import { MedusaService } from "@medusajs/framework/utils"
+import { InferTypeOf, DAL } from "@medusajs/framework/types"
 import LonghornRole from "./models/role"
 import LonghornStore from "./models/store"
 import LonghornUserRole from "./models/user-role"
 import LonghornUserStore from "./models/user-store"
 import LonghornStoreProduct from "./models/store-product"
 import { ROLE_TYPES, RoleType } from "./models/role"
+
+// Tipos para la inyección de dependencias
+type LonghornRoleType = InferTypeOf<typeof LonghornRole>
+type LonghornStoreType = InferTypeOf<typeof LonghornStore>
+type LonghornUserRoleType = InferTypeOf<typeof LonghornUserRole>
+type LonghornUserStoreType = InferTypeOf<typeof LonghornUserStore>
+type LonghornStoreProductType = InferTypeOf<typeof LonghornStoreProduct>
+
+type InjectedDependencies = {
+  longhornRoleRepository: DAL.RepositoryService<LonghornRoleType>
+  longhornStoreRepository: DAL.RepositoryService<LonghornStoreType>
+  longhornUserRoleRepository: DAL.RepositoryService<LonghornUserRoleType>
+  longhornUserStoreRepository: DAL.RepositoryService<LonghornUserStoreType>
+  longhornStoreProductRepository: DAL.RepositoryService<LonghornStoreProductType>
+}
 
 /**
  * Servicio principal del módulo Longhorn
@@ -22,6 +38,26 @@ class LonghornModuleService extends MedusaService({
   LonghornUserStore,
   LonghornStoreProduct,
 }) {
+  protected longhornRoleRepository_: DAL.RepositoryService<LonghornRoleType>
+  protected longhornStoreRepository_: DAL.RepositoryService<LonghornStoreType>
+  protected longhornUserRoleRepository_: DAL.RepositoryService<LonghornUserRoleType>
+  protected longhornUserStoreRepository_: DAL.RepositoryService<LonghornUserStoreType>
+  protected longhornStoreProductRepository_: DAL.RepositoryService<LonghornStoreProductType>
+
+  constructor({
+    longhornRoleRepository,
+    longhornStoreRepository,
+    longhornUserRoleRepository,
+    longhornUserStoreRepository,
+    longhornStoreProductRepository,
+  }: InjectedDependencies) {
+    super(...arguments)
+    this.longhornRoleRepository_ = longhornRoleRepository
+    this.longhornStoreRepository_ = longhornStoreRepository
+    this.longhornUserRoleRepository_ = longhornUserRoleRepository
+    this.longhornUserStoreRepository_ = longhornUserStoreRepository
+    this.longhornStoreProductRepository_ = longhornStoreProductRepository
+  }
   // ======= MÉTODOS DE ROLES =======
   
   async createRole(data: {

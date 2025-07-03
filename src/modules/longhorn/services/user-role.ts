@@ -110,35 +110,81 @@ class LonghornUserRoleService extends MedusaService({
   }
 
   async isSuperAdmin(user_id: string): Promise<boolean> {
-    const userRoles = await this.getUserRoles(user_id)
+    const userRoles = await this.longhornUserRoleRepository_.find({
+      where: {
+        user_id,
+        is_active: true,
+        deleted_at: null
+      },
+      relations: ['role']
+    })
     
     // Verificar si tiene un rol de tipo SUPER_ADMIN
-    // Como no tenemos relación directa con el modelo Role, usaremos una consulta manual
-    for (const userRole of userRoles) {
-      // TODO: Implementar consulta para verificar el tipo de rol
-      // Por ahora verificamos por role_id conocidos
-    }
-    
-    return false
+    return userRoles.some(userRole => 
+      userRole.role && userRole.role.type === ROLE_TYPES.SUPER_ADMIN
+    )
   }
 
   async isStoreManager(user_id: string, store_id: string): Promise<boolean> {
-    const userRoles = await this.getUserRoles(user_id, store_id)
+    const userRoles = await this.longhornUserRoleRepository_.find({
+      where: {
+        user_id,
+        store_id,
+        is_active: true,
+        deleted_at: null
+      },
+      relations: ['role']
+    })
     
-    // TODO: Implementar verificación del tipo de rol
-    return userRoles.length > 0
+    // Verificar si tiene un rol de tipo STORE_MANAGER en esta tienda
+    return userRoles.some(userRole => 
+      userRole.role && userRole.role.type === ROLE_TYPES.STORE_MANAGER
+    )
+  }
+
+  async isManagerOfOtherStore(user_id: string, excludeStoreId: string): Promise<boolean> {
+    const userRoles = await this.longhornUserRoleRepository_.find({
+      where: {
+        user_id,
+        is_active: true,
+        deleted_at: null
+      },
+      relations: ['role']
+    })
+    
+    // Verificar si es manager de alguna tienda que NO sea la excluida
+    return userRoles.some(userRole => 
+      userRole.role && 
+      userRole.role.type === ROLE_TYPES.STORE_MANAGER &&
+      userRole.store_id !== excludeStoreId
+    )
   }
 
   async canManageUser(manager_user_id: string, target_user_id: string, store_id?: string): Promise<boolean> {
-    // Super admin puede gestionar a cualquiera
-    if (await this.isSuperAdmin(manager_user_id)) {
+    // Super admin puede gestionar a cualquiera (excepto otros Super Admins)
+    const isManagerSuperAdmin = await this.isSuperAdmin(manager_user_id)
+    const isTargetSuperAdmin = await this.isSuperAdmin(target_user_id)
+    
+    if (isManagerSuperAdmin && !isTargetSuperAdmin) {
       return true
     }
 
-    // Store manager puede gestionar staff de su tienda
+    // Store manager puede gestionar staff de su tienda (no Super Admins ni otros Managers)
     if (store_id && await this.isStoreManager(manager_user_id, store_id)) {
-      // TODO: Verificar que el target user sea solo staff
-      return true
+      // No puede gestionar Super Admins
+      if (isTargetSuperAdmin) {
+        return false
+      }
+      
+      // No puede gestionar managers de otras tiendas
+      const isTargetManagerElsewhere = await this.isManagerOfOtherStore(target_user_id, store_id)
+      if (isTargetManagerElsewhere) {
+        return false
+      }
+      
+      // Puede gestionar staff de su tienda
+      const targetRoles = await this.getUserRoles(target_user_id, store_id)
+      return targetRoles.length > 0
     }
 
     return false

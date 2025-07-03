@@ -2,8 +2,6 @@ import {
   AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
-import LonghornUserRoleService from "../../../../modules/longhorn/services/user-role"
-import LonghornUserStoreService from "../../../../modules/longhorn/services/user-store"
 import { filterVisibleUsers } from "../../../../modules/longhorn/middleware/auth"
 import { Modules } from "@medusajs/framework/utils"
 
@@ -13,8 +11,7 @@ export const GET = async (
 ) => {
   try {
     const userModuleService = req.scope.resolve(Modules.USER)
-    const longhornUserRoleService = req.scope.resolve("longhornUserRoleService") as LonghornUserRoleService
-    const longhornUserStoreService = req.scope.resolve("longhornUserStoreService") as LonghornUserStoreService
+    const longhornService = req.scope.resolve("longhorn")
 
     const { store_id, role_type } = req.query
 
@@ -25,7 +22,7 @@ export const GET = async (
 
     // Filtrar por tienda si se especifica
     if (store_id) {
-      const storeUsers = await longhornUserStoreService.getStoreUsers(store_id as string)
+      const storeUsers = await longhornService.getStoreUsers(store_id as string)
       const storeUserIds = storeUsers.map(su => su.user_id)
       filteredUsers = allUsers.filter(user => storeUserIds.includes(user.id))
     }
@@ -34,7 +31,7 @@ export const GET = async (
     if (role_type) {
       const usersWithRole = []
       for (const user of filteredUsers) {
-        const userRoles = await longhornUserRoleService.getUserRoles(user.id, store_id as string)
+        const userRoles = await longhornService.getUserRoles(user.id, store_id as string)
         // TODO: Implementar verificación de tipo de rol cuando tengamos la relación
         const hasRoleType = userRoles.length > 0 // Placeholder
         if (hasRoleType) {
@@ -45,18 +42,35 @@ export const GET = async (
     }
 
     // Aplicar filtro de visibilidad según jerarquía
+    // Nota: Por ahora pasamos un objeto mock para compatibilidad
+    const mockUserRoleService = {
+      async isSuperAdmin(userId: string) {
+        return await longhornService.isSuperAdmin(userId)
+      },
+      async isStoreManager(userId: string, storeId: string) {
+        return await longhornService.isStoreManager(userId, storeId)
+      },
+      async getUserRoles(userId: string, storeId?: string) {
+        return await longhornService.getUserRoles(userId, storeId)
+      },
+      async isManagerOfOtherStore(userId: string, excludeStoreId: string) {
+        // Implementación temporal
+        return false
+      }
+    }
+
     const visibleUsers = await filterVisibleUsers(
-      req.user.id,
+      req.auth_context.actor_id,
       filteredUsers,
-      longhornUserRoleService,
+      mockUserRoleService as any,
       store_id as string
     )
 
     // Enriquecer usuarios con información de roles y tiendas
     const enrichedUsers = await Promise.all(
       visibleUsers.map(async (user) => {
-        const userRoles = await longhornUserRoleService.getUserRoles(user.id)
-        const userStores = await longhornUserStoreService.getUserStores(user.id)
+        const userRoles = await longhornService.getUserRoles(user.id)
+        const userStores = await longhornService.getUserStores(user.id)
 
         return {
           ...user,
@@ -86,8 +100,7 @@ export const POST = async (
 ) => {
   try {
     const userModuleService = req.scope.resolve(Modules.USER)
-    const longhornUserRoleService = req.scope.resolve("longhornUserRoleService") as LonghornUserRoleService
-    const longhornUserStoreService = req.scope.resolve("longhornUserStoreService") as LonghornUserStoreService
+    const longhornService = req.scope.resolve("longhorn")
 
     const { 
       first_name,
@@ -115,7 +128,7 @@ export const POST = async (
 
     try {
       // Asignar rol al usuario
-      await longhornUserRoleService.assignRole({
+      await longhornService.assignRole({
         user_id: newUser.id,
         role_id,
         store_id,
@@ -124,7 +137,7 @@ export const POST = async (
 
       // Si hay store_id, asignar usuario a la tienda
       if (store_id) {
-        await longhornUserStoreService.assignUserToStore({
+        await longhornService.assignUserToStore({
           user_id: newUser.id,
           store_id,
           metadata
@@ -132,8 +145,8 @@ export const POST = async (
       }
 
       // Obtener el usuario completo con roles y tiendas
-      const userRoles = await longhornUserRoleService.getUserRoles(newUser.id)
-      const userStores = await longhornUserStoreService.getUserStores(newUser.id)
+      const userRoles = await longhornService.getUserRoles(newUser.id)
+      const userStores = await longhornService.getUserStores(newUser.id)
 
       const enrichedUser = {
         ...newUser,

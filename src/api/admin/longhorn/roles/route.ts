@@ -2,24 +2,23 @@ import {
   AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
-import LonghornRoleService from "../../../../modules/longhorn/services/role"
 
 export const GET = async (
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
-    const longhornRoleService = req.scope.resolve("longhornRoleService") as LonghornRoleService
+    const longhornService = req.scope.resolve("longhorn")
     const { type, active_only = "true" } = req.query
 
     let roles
     if (type) {
-      roles = await longhornRoleService.getRolesByType(type as any)
+      roles = await longhornService.getRolesByType(type as any)
     } else if (active_only === "true") {
-      roles = await longhornRoleService.getActiveRoles()
+      roles = await longhornService.getActiveRoles()
     } else {
       // Para obtener todos los roles (incluidos inactivos), necesitamos modificar el servicio
-      roles = await longhornRoleService.getActiveRoles()
+      roles = await longhornService.getActiveRoles()
     }
 
     res.json({
@@ -41,7 +40,7 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   try {
-    const longhornRoleService = req.scope.resolve("longhornRoleService") as LonghornRoleService
+    const longhornService = req.scope.resolve("longhorn")
     
     const { name, type, description, permissions, metadata } = req.body
 
@@ -60,7 +59,7 @@ export const POST = async (
       })
     }
 
-    const role = await longhornRoleService.createRole({
+    const role = await longhornService.createRole({
       name,
       type,
       description,

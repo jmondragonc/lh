@@ -219,6 +219,7 @@ export function requireUserManagement(targetUserIdParam: string = "user_id", sto
 
 /**
  * Utilidad para filtrar usuarios visibles según jerarquía
+ * REGLA CRÍTICA: Usuarios menores NO ven Super Administrador ni su rol
  */
 export async function filterVisibleUsers(
   currentUserId: string, 
@@ -228,29 +229,48 @@ export async function filterVisibleUsers(
 ): Promise<any[]> {
   const isSuperAdmin = await userRoleService.isSuperAdmin(currentUserId)
   
-  // Super admin ve a todos
+  // Super admin ve a todos (único privilegio total)
   if (isSuperAdmin) {
     return users
   }
 
-  // Manager ve solo a su staff en la tienda
+  // REGLA CRÍTICA: Filtrar Super Admins de la vista de usuarios menores
+  const filteredUsers = []
+  for (const user of users) {
+    const isTargetSuperAdmin = await userRoleService.isSuperAdmin(user.id)
+    
+    // NUNCA mostrar Super Admins a usuarios no-Super Admin
+    if (isTargetSuperAdmin) {
+      continue // SKIP Super Admin users
+    }
+    
+    filteredUsers.push(user)
+  }
+
+  // Si hay storeId, aplicar filtrado adicional por tienda
   if (storeId) {
     const isStoreManager = await userRoleService.isStoreManager(currentUserId, storeId)
+    
     if (isStoreManager) {
-      const visibleUsers = []
-      for (const user of users) {
+      // Manager ve solo a su staff en la tienda (ya sin Super Admins)
+      const storeVisibleUsers = []
+      for (const user of filteredUsers) {
         const userRoles = await userRoleService.getUserRoles(user.id, storeId)
-        const isOnlyStaff = userRoles.every(ur => 
-          ur.role && ur.role.type === ROLE_TYPES.STORE_STAFF
-        )
-        if (isOnlyStaff) {
-          visibleUsers.push(user)
+        
+        // Mostrar usuarios que tienen roles en esta tienda
+        if (userRoles.length > 0) {
+          // Verificar que no sea manager de otra tienda
+          const isManagerElsewhere = await userRoleService.isManagerOfOtherStore(user.id, storeId)
+          
+          if (!isManagerElsewhere) {
+            storeVisibleUsers.push(user)
+          }
         }
       }
-      return visibleUsers
+      return storeVisibleUsers
     }
   }
 
-  // Staff no ve a otros usuarios
-  return []
+  // Staff solo se ve a sí mismo (ya sin Super Admins)
+  return filteredUsers.filter(user => user.id === currentUserId)
 }
