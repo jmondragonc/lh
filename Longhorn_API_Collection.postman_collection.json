@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Longhorn API Collection",
-    "description": "API endpoints para el proyecto Longhorn - Grupos A y B completos",
-    "version": "1.0.0",
+    "name": "Longhorn API Collection - Híbrida",
+    "description": "API endpoints para el proyecto Longhorn - Implementación híbrida completada (Grupo C)",
+    "version": "2.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -19,10 +19,10 @@
   ],
   "item": [
     {
-      "name": "Gestión de Usuarios",
+      "name": "Gestión de Usuarios - Sistema Híbrido",
       "item": [
         {
-          "name": "Obtener lista de usuarios",
+          "name": "Obtener lista de usuarios (con filtrado automático)",
           "request": {
             "method": "GET",
             "header": [
@@ -56,7 +56,7 @@
                 {
                   "key": "role_type",
                   "value": "",
-                  "description": "Filtrar por tipo de rol (opcional)"
+                  "description": "Filtrar por tipo de rol: super_admin, local_manager, local_staff"
                 }
               ]
             }
@@ -64,7 +64,7 @@
           "response": []
         },
         {
-          "name": "Crear nuevo usuario",
+          "name": "Crear nuevo usuario (validaciones híbridas)",
           "request": {
             "method": "POST",
             "header": [
@@ -81,7 +81,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"first_name\": \"Juan\",\n  \"last_name\": \"Pérez\",\n  \"email\": \"juan.perez@longhorn.com\",\n  \"role_id\": \"rol_id_example\",\n  \"store_id\": \"store_id_example\",\n  \"metadata\": {\n    \"department\": \"Operaciones\",\n    \"employee_id\": \"EMP001\"\n  }\n}",
+              "raw": "{\n  \"first_name\": \"María\",\n  \"last_name\": \"González\",\n  \"email\": \"maria.gonzalez@longhorn.com\",\n  \"avatar_url\": \"https://ejemplo.com/avatar.jpg\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -151,7 +151,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"first_name\": \"Juan Carlos\",\n  \"last_name\": \"Pérez González\",\n  \"email\": \"juan.perez@longhorn.com\",\n  \"metadata\": {\n    \"department\": \"Gerencia\",\n    \"employee_id\": \"EMP001\",\n    \"phone\": \"+51 999 888 777\"\n  }\n}",
+              "raw": "{\n  \"first_name\": \"María Elena\",\n  \"last_name\": \"González Pérez\",\n  \"email\": \"maria.gonzalez@longhorn.com\",\n  \"avatar_url\": \"https://ejemplo.com/avatar-updated.jpg\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -203,11 +203,43 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Obtener roles de usuario",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/longhorn/users/USER_ID_HERE/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "longhorn",
+                "users",
+                "USER_ID_HERE",
+                "roles"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Gestión de Roles de Usuario",
+      "name": "Gestión de Roles de Usuario - Sistema Híbrido",
       "item": [
         {
           "name": "Asignar rol a usuario",
@@ -227,7 +259,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role_id\": \"rol_store_manager_id\",\n  \"store_id\": \"store_id_example\",\n  \"metadata\": {\n    \"assigned_by\": \"Super Admin\",\n    \"assignment_date\": \"2025-01-01\",\n    \"reason\": \"Promoción a gerente\"\n  }\n}",
+              "raw": "{\n  \"role_id\": \"rol_id_example\",\n  \"restaurant_location_id\": \"store_id_example\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -266,17 +298,8 @@
                 "type": "text"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"role_id\": \"rol_store_manager_id\",\n  \"store_id\": \"store_id_example\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "{{base_url}}/admin/longhorn/users/USER_ID_HERE/roles",
+              "raw": "{{base_url}}/admin/longhorn/users/USER_ID_HERE/roles/ROLE_ID_HERE?restaurant_location_id=STORE_ID_HERE",
               "host": [
                 "{{base_url}}"
               ],
@@ -285,7 +308,15 @@
                 "longhorn",
                 "users",
                 "USER_ID_HERE",
-                "roles"
+                "roles",
+                "ROLE_ID_HERE"
+              ],
+              "query": [
+                {
+                  "key": "restaurant_location_id",
+                  "value": "STORE_ID_HERE",
+                  "description": "ID de sucursal (opcional para roles globales)"
+                }
               ]
             }
           },
@@ -294,10 +325,10 @@
       ]
     },
     {
-      "name": "Gestión de Roles",
+      "name": "Gestión de Roles - Sistema Híbrido",
       "item": [
         {
-          "name": "Obtener lista de roles",
+          "name": "Obtener lista de roles (con filtrado automático)",
           "request": {
             "method": "GET",
             "header": [
@@ -326,7 +357,7 @@
                 {
                   "key": "type",
                   "value": "",
-                  "description": "Filtrar por tipo: SUPER_ADMIN, STORE_MANAGER, STORE_STAFF"
+                  "description": "Filtrar por tipo: super_admin, local_manager, local_staff"
                 },
                 {
                   "key": "active_only",
@@ -356,7 +387,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Supervisor de Turno\",\n  \"type\": \"STORE_STAFF\",\n  \"description\": \"Supervisor responsable de turno específico\",\n  \"permissions\": [\n    \"view_store_orders\",\n    \"manage_store_inventory\",\n    \"view_store_reports\"\n  ],\n  \"metadata\": {\n    \"department\": \"Operaciones\",\n    \"level\": \"Intermedio\",\n    \"created_by\": \"Super Admin\"\n  }\n}",
+              "raw": "{\n  \"name\": \"Supervisor de Turno\",\n  \"type\": \"local_staff\",\n  \"description\": \"Supervisor responsable de turno específico\",\n  \"permissions\": [\n    \"view_products\",\n    \"create_orders\",\n    \"update_inventory\",\n    \"view_local_orders\"\n  ],\n  \"is_active\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -376,11 +407,82 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Actualizar rol",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Supervisor de Turno Senior\",\n  \"type\": \"local_staff\",\n  \"description\": \"Supervisor senior con permisos extendidos\",\n  \"permissions\": [\n    \"view_products\",\n    \"create_orders\",\n    \"update_inventory\",\n    \"view_local_orders\",\n    \"manage_local_inventory\"\n  ],\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/longhorn/roles/ROLE_ID_HERE",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "longhorn",
+                "roles",
+                "ROLE_ID_HERE"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar rol",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/longhorn/roles/ROLE_ID_HERE",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "longhorn",
+                "roles",
+                "ROLE_ID_HERE"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Gestión de Tiendas",
+      "name": "Gestión de Tiendas/Sucursales",
       "item": [
         {
           "name": "Obtener lista de tiendas",
@@ -430,7 +532,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Longhorn Steakhouse Miraflores\",\n  \"code\": \"LH-MIR-001\",\n  \"description\": \"Sucursal principal en Miraflores\",\n  \"address\": {\n    \"street\": \"Av. Larco 1234\",\n    \"city\": \"Miraflores\",\n    \"state\": \"Lima\",\n    \"country\": \"Perú\",\n    \"postal_code\": \"15074\"\n  },\n  \"phone\": \"+51 1 234-5678\",\n  \"email\": \"miraflores@longhorn.pe\",\n  \"business_hours\": {\n    \"monday\": \"11:00-23:00\",\n    \"tuesday\": \"11:00-23:00\",\n    \"wednesday\": \"11:00-23:00\",\n    \"thursday\": \"11:00-23:00\",\n    \"friday\": \"11:00-24:00\",\n    \"saturday\": \"11:00-24:00\",\n    \"sunday\": \"11:00-22:00\"\n  },\n  \"delivery_settings\": {\n    \"enabled\": true,\n    \"radius_km\": 5,\n    \"delivery_fee\": 10.00,\n    \"minimum_order\": 50.00\n  },\n  \"metadata\": {\n    \"zone\": \"Lima Sur\",\n    \"capacity\": 120,\n    \"parking\": true,\n    \"wifi\": true\n  }\n}",
+              "raw": "{\n  \"name\": \"Longhorn Steakhouse San Miguel\",\n  \"code\": \"LH-SM-001\",\n  \"description\": \"Nueva sucursal en San Miguel\",\n  \"address\": {\n    \"street\": \"Av. La Marina 2355\",\n    \"city\": \"San Miguel\",\n    \"state\": \"Lima\",\n    \"country\": \"Perú\",\n    \"postal_code\": \"15087\"\n  },\n  \"phone\": \"+51 1 987-6543\",\n  \"email\": \"sanmiguel@longhorn.pe\",\n  \"business_hours\": {\n    \"monday\": \"12:00-23:00\",\n    \"tuesday\": \"12:00-23:00\",\n    \"wednesday\": \"12:00-23:00\",\n    \"thursday\": \"12:00-23:00\",\n    \"friday\": \"12:00-23:00\",\n    \"saturday\": \"12:00-23:00\",\n    \"sunday\": \"12:00-23:00\"\n  },\n  \"delivery_settings\": {\n    \"enabled\": true,\n    \"radius_km\": 5,\n    \"delivery_fee\": 8.90,\n    \"minimum_order\": 45.00\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -481,6 +583,168 @@
                 "admin",
                 "auth",
                 "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Testing de UI Extensions",
+      "item": [
+        {
+          "name": "Test Dashboard - Estadísticas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/longhorn/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "longhorn",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Widget - Roles de Usuario",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/longhorn/users/USER_ID_HERE/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "longhorn",
+                "users",
+                "USER_ID_HERE",
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Widget - Estadísticas Sistema",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/longhorn/stores",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "longhorn",
+                "stores"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Permisos del Sistema",
+      "description": "Lista de todos los permisos disponibles en el sistema Longhorn",
+      "item": [
+        {
+          "name": "Permisos Globales (Super Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "# Permisos para Super Administrador:\n# - manage_locations: Gestionar ubicaciones/sucursales\n# - manage_users: Gestionar todos los usuarios\n# - manage_products: Gestionar productos globalmente\n# - manage_orders: Gestionar pedidos globalmente\n# - view_analytics: Ver análisis globales\n# - manage_inventory: Gestionar inventario global\n# - manage_settings: Gestionar configuraciones del sistema\n# - manage_roles: Gestionar roles y permisos",
+              "host": [
+                "# Permisos para Super Administrador",
+                "# - manage_locations",
+                "# - manage_users",
+                "# - manage_products",
+                "# - manage_orders",
+                "# - view_analytics",
+                "# - manage_inventory",
+                "# - manage_settings",
+                "# - manage_roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Permisos Locales (Gerente)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "# Permisos para Gerente Local:\n# - manage_local_products: Gestionar productos del local\n# - manage_local_orders: Gestionar pedidos del local\n# - view_local_analytics: Ver análisis del local\n# - manage_local_inventory: Gestionar inventario del local\n# - manage_local_staff: Gestionar personal del local",
+              "host": [
+                "# Permisos para Gerente Local",
+                "# - manage_local_products",
+                "# - manage_local_orders",
+                "# - view_local_analytics",
+                "# - manage_local_inventory",
+                "# - manage_local_staff"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Permisos Básicos (Personal)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "# Permisos para Personal Local:\n# - view_products: Ver productos del local\n# - create_orders: Crear nuevos pedidos\n# - update_inventory: Actualizar inventario básico\n# - view_local_orders: Ver pedidos del local",
+              "host": [
+                "# Permisos para Personal Local",
+                "# - view_products",
+                "# - create_orders",
+                "# - update_inventory",
+                "# - view_local_orders"
               ]
             }
           },

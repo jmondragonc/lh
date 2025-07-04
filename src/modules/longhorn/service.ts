@@ -1,26 +1,10 @@
 import { MedusaService } from "@medusajs/framework/utils"
-import { InferTypeOf, DAL } from "@medusajs/framework/types"
 import LonghornRole from "./models/role"
 import LonghornStore from "./models/store"
 import LonghornUserRole from "./models/user-role"
 import LonghornUserStore from "./models/user-store"
 import LonghornStoreProduct from "./models/store-product"
 import { ROLE_TYPES, RoleType } from "./models/role"
-
-// Tipos para la inyección de dependencias
-type LonghornRoleType = InferTypeOf<typeof LonghornRole>
-type LonghornStoreType = InferTypeOf<typeof LonghornStore>
-type LonghornUserRoleType = InferTypeOf<typeof LonghornUserRole>
-type LonghornUserStoreType = InferTypeOf<typeof LonghornUserStore>
-type LonghornStoreProductType = InferTypeOf<typeof LonghornStoreProduct>
-
-type InjectedDependencies = {
-  longhornRoleRepository: DAL.RepositoryService<LonghornRoleType>
-  longhornStoreRepository: DAL.RepositoryService<LonghornStoreType>
-  longhornUserRoleRepository: DAL.RepositoryService<LonghornUserRoleType>
-  longhornUserStoreRepository: DAL.RepositoryService<LonghornUserStoreType>
-  longhornStoreProductRepository: DAL.RepositoryService<LonghornStoreProductType>
-}
 
 /**
  * Servicio principal del módulo Longhorn
@@ -38,26 +22,7 @@ class LonghornModuleService extends MedusaService({
   LonghornUserStore,
   LonghornStoreProduct,
 }) {
-  protected longhornRoleRepository_: DAL.RepositoryService<LonghornRoleType>
-  protected longhornStoreRepository_: DAL.RepositoryService<LonghornStoreType>
-  protected longhornUserRoleRepository_: DAL.RepositoryService<LonghornUserRoleType>
-  protected longhornUserStoreRepository_: DAL.RepositoryService<LonghornUserStoreType>
-  protected longhornStoreProductRepository_: DAL.RepositoryService<LonghornStoreProductType>
 
-  constructor({
-    longhornRoleRepository,
-    longhornStoreRepository,
-    longhornUserRoleRepository,
-    longhornUserStoreRepository,
-    longhornStoreProductRepository,
-  }: InjectedDependencies) {
-    super(...arguments)
-    this.longhornRoleRepository_ = longhornRoleRepository
-    this.longhornStoreRepository_ = longhornStoreRepository
-    this.longhornUserRoleRepository_ = longhornUserRoleRepository
-    this.longhornUserStoreRepository_ = longhornUserStoreRepository
-    this.longhornStoreProductRepository_ = longhornStoreProductRepository
-  }
   // ======= MÉTODOS DE ROLES =======
   
   async createRole(data: {
@@ -67,24 +32,26 @@ class LonghornModuleService extends MedusaService({
     permissions?: Record<string, any>
     metadata?: Record<string, any>
   }) {
-    return await this.longhornRoleRepository_.create(data)
+    return await this.createLonghornRoles([data])
   }
 
   async getRolesByType(type: RoleType) {
-    return await this.longhornRoleRepository_.find({
-      where: {
-        type,
-        deleted_at: null
-      }
+    return await this.listLonghornRoles({
+      type,
+      deleted_at: null
     })
   }
 
   async getActiveRoles() {
-    return await this.longhornRoleRepository_.find({
-      where: {
-        is_active: true,
-        deleted_at: null
-      }
+    return await this.listLonghornRoles({
+      is_active: true,
+      deleted_at: null
+    })
+  }
+
+  async getAllRoles() {
+    return await this.listLonghornRoles({
+      deleted_at: null
     })
   }
 
@@ -95,11 +62,11 @@ class LonghornModuleService extends MedusaService({
     permissions?: Record<string, any>
     metadata?: Record<string, any>
   }) {
-    return await this.longhornRoleRepository_.update(id, data)
+    return await this.updateLonghornRoles([{ id, ...data }])
   }
 
   async deleteRole(id: string) {
-    return await this.longhornRoleRepository_.delete(id)
+    return await this.deleteLonghornRoles([id])
   }
 
   // ======= MÉTODOS DE TIENDAS =======
@@ -116,36 +83,32 @@ class LonghornModuleService extends MedusaService({
     metadata?: Record<string, any>
   }) {
     // Verificar que el código sea único
-    const existingStore = await this.longhornStoreRepository_.findOne({
-      where: {
-        code: data.code,
-        deleted_at: null
-      }
+    const existingStores = await this.listLonghornStores({
+      code: data.code,
+      deleted_at: null
     })
 
-    if (existingStore) {
+    if (existingStores.length > 0) {
       throw new Error(`Store with code ${data.code} already exists`)
     }
 
-    return await this.longhornStoreRepository_.create(data)
+    const createdStores = await this.createLonghornStores([data])
+    return createdStores[0]
   }
 
   async getActiveStores() {
-    return await this.longhornStoreRepository_.find({
-      where: {
-        is_active: true,
-        deleted_at: null
-      }
+    return await this.listLonghornStores({
+      is_active: true,
+      deleted_at: null
     })
   }
 
   async getStoreByCode(code: string) {
-    return await this.longhornStoreRepository_.findOne({
-      where: {
-        code,
-        deleted_at: null
-      }
+    const stores = await this.listLonghornStores({
+      code,
+      deleted_at: null
     })
+    return stores[0] || null
   }
 
   async updateStore(id: string, data: {
@@ -159,17 +122,20 @@ class LonghornModuleService extends MedusaService({
     delivery_settings?: Record<string, any>
     metadata?: Record<string, any>
   }) {
-    return await this.longhornStoreRepository_.update(id, data)
+    const updatedStores = await this.updateLonghornStores([{ id, ...data }])
+    return updatedStores[0]
   }
 
   async deactivateStore(id: string) {
-    return await this.longhornStoreRepository_.update(id, {
+    const updatedStores = await this.updateLonghornStores([{
+      id,
       is_active: false
-    })
+    }])
+    return updatedStores[0]
   }
 
   async deleteStore(id: string) {
-    return await this.longhornStoreRepository_.delete(id)
+    return await this.deleteLonghornStores([id])
   }
 
   // ======= MÉTODOS DE USUARIO-ROL =======
@@ -181,91 +147,116 @@ class LonghornModuleService extends MedusaService({
     metadata?: Record<string, any>
   }) {
     // Verificar que no exista ya una asignación activa
-    const existingAssignment = await this.longhornUserRoleRepository_.findOne({
-      where: {
-        user_id: data.user_id,
-        role_id: data.role_id,
-        store_id: data.store_id || null,
-        is_active: true,
-        deleted_at: null
-      }
+    const existingAssignments = await this.listLonghornUserRoles({
+      user_id: data.user_id,
+      role_id: data.role_id,
+      store_id: data.store_id || null,
+      is_active: true,
+      deleted_at: null
     })
 
-    if (existingAssignment) {
+    if (existingAssignments.length > 0) {
       throw new Error(`User already has this role assigned`)
     }
 
-    return await this.longhornUserRoleRepository_.create(data)
+    const createdUserRoles = await this.createLonghornUserRoles([data])
+    return createdUserRoles[0]
   }
 
   async getUserRoles(user_id: string, store_id?: string) {
-    const where: any = {
+    const filters: any = {
       user_id,
       is_active: true,
       deleted_at: null
     }
 
     if (store_id !== undefined) {
-      where.store_id = store_id
+      filters.store_id = store_id
     }
 
-    return await this.longhornUserRoleRepository_.find({
-      where
-    })
+    // Obtener user roles
+    const userRoles = await this.listLonghornUserRoles(filters)
+    
+    // Hacer JOIN manual con roles
+    const enrichedUserRoles = await Promise.all(
+      userRoles.map(async (userRole) => {
+        const roles = await this.listLonghornRoles({ id: userRole.role_id })
+        const role = roles[0] || null
+        
+        return {
+          ...userRole,
+          role: role
+        }
+      })
+    )
+
+    return enrichedUserRoles
   }
 
-  async getUsersByRole(role_id: string, store_id?: string) {
-    const where: any = {
-      role_id,
+  async getUsersByRoleType(role_type: RoleType, store_id?: string) {
+    const filters: any = {
       is_active: true,
       deleted_at: null
     }
 
     if (store_id !== undefined) {
-      where.store_id = store_id
+      filters.store_id = store_id
     }
 
-    return await this.longhornUserRoleRepository_.find({
-      where
-    })
+    // Obtener user roles
+    const userRoles = await this.listLonghornUserRoles(filters)
+    
+    // Hacer JOIN manual con roles y filtrar por tipo
+    const enrichedUserRoles = await Promise.all(
+      userRoles.map(async (userRole) => {
+        const roles = await this.listLonghornRoles({ id: userRole.role_id })
+        const role = roles[0] || null
+        
+        return {
+          ...userRole,
+          role: role
+        }
+      })
+    )
+
+    // Filtrar por tipo de rol
+    return enrichedUserRoles.filter(userRole => userRole.role?.type === role_type)
   }
 
   async removeUserRole(user_id: string, role_id: string, store_id?: string) {
-    const userRole = await this.longhornUserRoleRepository_.findOne({
-      where: {
-        user_id,
-        role_id,
-        store_id: store_id || null,
-        is_active: true,
-        deleted_at: null
-      }
+    const userRoles = await this.listLonghornUserRoles({
+      user_id,
+      role_id,
+      store_id: store_id || null,
+      is_active: true,
+      deleted_at: null
     })
 
-    if (!userRole) {
+    if (userRoles.length === 0) {
       throw new Error(`User role assignment not found`)
     }
 
-    return await this.longhornUserRoleRepository_.delete(userRole.id)
+    return await this.deleteLonghornUserRoles([userRoles[0].id])
   }
 
   async deactivateUserRole(user_id: string, role_id: string, store_id?: string) {
-    const userRole = await this.longhornUserRoleRepository_.findOne({
-      where: {
-        user_id,
-        role_id,
-        store_id: store_id || null,
-        is_active: true,
-        deleted_at: null
-      }
+    const userRoles = await this.listLonghornUserRoles({
+      user_id,
+      role_id,
+      store_id: store_id || null,
+      is_active: true,
+      deleted_at: null
     })
 
-    if (!userRole) {
+    if (userRoles.length === 0) {
       throw new Error(`User role assignment not found`)
     }
 
-    return await this.longhornUserRoleRepository_.update(userRole.id, {
+    const updatedUserRoles = await this.updateLonghornUserRoles([{
+      id: userRoles[0].id,
       is_active: false
-    })
+    }])
+    return updatedUserRoles[0]
   }
 
   // ======= MÉTODOS DE USUARIO-TIENDA =======
@@ -276,70 +267,76 @@ class LonghornModuleService extends MedusaService({
     metadata?: Record<string, any>
   }) {
     // Verificar que no exista ya una asignación activa
-    const existingAssignment = await this.longhornUserStoreRepository_.findOne({
-      where: {
-        user_id: data.user_id,
-        store_id: data.store_id,
-        is_active: true,
-        deleted_at: null
-      }
+    const existingAssignments = await this.listLonghornUserStores({
+      user_id: data.user_id,
+      store_id: data.store_id,
+      is_active: true,
+      deleted_at: null
     })
 
-    if (existingAssignment) {
+    if (existingAssignments.length > 0) {
       throw new Error(`User is already assigned to this store`)
     }
 
-    return await this.longhornUserStoreRepository_.create(data)
+    const createdUserStores = await this.createLonghornUserStores([data])
+    return createdUserStores[0]
   }
 
   async getUserStores(user_id: string) {
-    return await this.longhornUserStoreRepository_.find({
-      where: {
-        user_id,
-        is_active: true,
-        deleted_at: null
-      }
+    const userStores = await this.listLonghornUserStores({
+      user_id,
+      is_active: true,
+      deleted_at: null
     })
+
+    // Hacer JOIN manual con stores
+    const enrichedUserStores = await Promise.all(
+      userStores.map(async (userStore) => {
+        const stores = await this.listLonghornStores({ id: userStore.store_id })
+        const store = stores[0] || null
+        
+        return {
+          ...userStore,
+          store: store
+        }
+      })
+    )
+
+    return enrichedUserStores
   }
 
   async getStoreUsers(store_id: string) {
-    return await this.longhornUserStoreRepository_.find({
-      where: {
-        store_id,
-        is_active: true,
-        deleted_at: null
-      }
+    return await this.listLonghornUserStores({
+      store_id,
+      is_active: true,
+      deleted_at: null
     })
   }
 
   async removeUserFromStore(user_id: string, store_id: string) {
-    const userStore = await this.longhornUserStoreRepository_.findOne({
-      where: {
-        user_id,
-        store_id,
-        is_active: true,
-        deleted_at: null
-      }
+    const userStores = await this.listLonghornUserStores({
+      user_id,
+      store_id,
+      is_active: true,
+      deleted_at: null
     })
 
-    if (!userStore) {
+    if (userStores.length === 0) {
       throw new Error(`User store assignment not found`)
     }
 
-    return await this.longhornUserStoreRepository_.delete(userStore.id)
+    return await this.deleteLonghornUserStores([userStores[0].id])
   }
 
   async hasAccessToStore(user_id: string, store_id: string): Promise<boolean> {
-    const userStore = await this.longhornUserStoreRepository_.findOne({
-      where: {
-        user_id,
-        store_id,
-        is_active: true,
-        deleted_at: null
-      }
+    const userStores = await this.listLonghornUserStores({
+      user_id,
+      store_id,
+      is_active: true,
+      deleted_at: null
     })
 
-    return !!userStore
+    return userStores.length > 0
   }
 
   // ======= MÉTODOS DE PRODUCTOS POR TIENDA =======
@@ -353,53 +350,50 @@ class LonghornModuleService extends MedusaService({
     metadata?: Record<string, any>
   }) {
     // Verificar que no exista ya una asignación
-    const existingAssignment = await this.longhornStoreProductRepository_.findOne({
-      where: {
-        store_id: data.store_id,
-        product_id: data.product_id,
-        deleted_at: null
-      }
+    const existingAssignments = await this.listLonghornStoreProducts({
+      store_id: data.store_id,
+      product_id: data.product_id,
+      deleted_at: null
     })
 
-    if (existingAssignment) {
+    if (existingAssignments.length > 0) {
       throw new Error(`Product is already assigned to this store`)
     }
 
-    return await this.longhornStoreProductRepository_.create({
+    const storeProductData = {
       is_available: true,
       is_visible: true,
       ...data
-    })
+    }
+
+    const createdStoreProducts = await this.createLonghornStoreProducts([storeProductData])
+    return createdStoreProducts[0]
   }
 
   async getStoreProducts(store_id: string, options?: {
     available_only?: boolean
     visible_only?: boolean
   }) {
-    const where: any = {
+    const filters: any = {
       store_id,
       deleted_at: null
     }
 
     if (options?.available_only) {
-      where.is_available = true
+      filters.is_available = true
     }
 
     if (options?.visible_only) {
-      where.is_visible = true
+      filters.is_visible = true
     }
 
-    return await this.longhornStoreProductRepository_.find({
-      where
-    })
+    return await this.listLonghornStoreProducts(filters)
   }
 
   async getProductStores(product_id: string) {
-    return await this.longhornStoreProductRepository_.find({
-      where: {
-        product_id,
-        deleted_at: null
-      }
+    return await this.listLonghornStoreProducts({
+      product_id,
+      deleted_at: null
     })
   }
 
@@ -409,49 +403,47 @@ class LonghornModuleService extends MedusaService({
     store_specific_settings?: Record<string, any>
     metadata?: Record<string, any>
   }) {
-    const storeProduct = await this.longhornStoreProductRepository_.findOne({
-      where: {
-        store_id,
-        product_id,
-        deleted_at: null
-      }
+    const storeProducts = await this.listLonghornStoreProducts({
+      store_id,
+      product_id,
+      deleted_at: null
     })
 
-    if (!storeProduct) {
+    if (storeProducts.length === 0) {
       throw new Error(`Store product assignment not found`)
     }
 
-    return await this.longhornStoreProductRepository_.update(storeProduct.id, data)
+    const updatedStoreProducts = await this.updateLonghornStoreProducts([{
+      id: storeProducts[0].id,
+      ...data
+    }])
+    return updatedStoreProducts[0]
   }
 
   async removeProductFromStore(store_id: string, product_id: string) {
-    const storeProduct = await this.longhornStoreProductRepository_.findOne({
-      where: {
-        store_id,
-        product_id,
-        deleted_at: null
-      }
+    const storeProducts = await this.listLonghornStoreProducts({
+      store_id,
+      product_id,
+      deleted_at: null
     })
 
-    if (!storeProduct) {
+    if (storeProducts.length === 0) {
       throw new Error(`Store product assignment not found`)
     }
 
-    return await this.longhornStoreProductRepository_.delete(storeProduct.id)
+    return await this.deleteLonghornStoreProducts([storeProducts[0].id])
   }
 
   async isProductAvailableInStore(store_id: string, product_id: string): Promise<boolean> {
-    const storeProduct = await this.longhornStoreProductRepository_.findOne({
-      where: {
-        store_id,
-        product_id,
-        is_available: true,
-        is_visible: true,
-        deleted_at: null
-      }
+    const storeProducts = await this.listLonghornStoreProducts({
+      store_id,
+      product_id,
+      is_available: true,
+      is_visible: true,
+      deleted_at: null
     })
 
-    return !!storeProduct
+    return storeProducts.length > 0
   }
 
   async bulkAssignProducts(store_id: string, product_ids: string[]) {
@@ -484,23 +476,44 @@ class LonghornModuleService extends MedusaService({
   }
 
   async isSuperAdmin(user_id: string): Promise<boolean> {
-    const userRoles = await this.getUserRoles(user_id)
+    const userRoles = await this.listLonghornUserRoles({
+      user_id,
+      is_active: true,
+      deleted_at: null
+    })
     
-    // Verificar si tiene un rol de tipo SUPER_ADMIN
-    // Como no tenemos relación directa con el modelo Role, usaremos una consulta manual
+    // Verificar cada rol manualmente
     for (const userRole of userRoles) {
-      // TODO: Implementar consulta para verificar el tipo de rol
-      // Por ahora verificamos por role_id conocidos
+      const roles = await this.listLonghornRoles({ id: userRole.role_id })
+      const role = roles[0]
+      
+      if (role?.type === ROLE_TYPES.SUPER_ADMIN) {
+        return true
+      }
     }
     
     return false
   }
 
   async isStoreManager(user_id: string, store_id: string): Promise<boolean> {
-    const userRoles = await this.getUserRoles(user_id, store_id)
+    const userRoles = await this.listLonghornUserRoles({
+      user_id,
+      store_id,
+      is_active: true,
+      deleted_at: null
+    })
     
-    // TODO: Implementar verificación del tipo de rol
-    return userRoles.length > 0
+    // Verificar cada rol manualmente
+    for (const userRole of userRoles) {
+      const roles = await this.listLonghornRoles({ id: userRole.role_id })
+      const role = roles[0]
+      
+      if (role?.type === ROLE_TYPES.STORE_MANAGER) {
+        return true
+      }
+    }
+    
+    return false
   }
 
   async canManageUser(manager_user_id: string, target_user_id: string, store_id?: string): Promise<boolean> {
