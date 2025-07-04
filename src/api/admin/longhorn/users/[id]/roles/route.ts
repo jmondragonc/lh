@@ -2,7 +2,6 @@ import {
   AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
-import { LONGHORN_MODULE } from "../../../../../../modules/longhorn"
 
 export const GET = async (
   req: AuthenticatedMedusaRequest,
@@ -10,7 +9,7 @@ export const GET = async (
 ) => {
   try {
     const { id: user_id } = req.params
-    const longhornService = req.scope.resolve(LONGHORN_MODULE)
+    const longhornService = req.scope.resolve("longhorn")
 
     // Por ahora saltamos la verificación de permisos hasta que esté funcionando
     // TODO: Implementar verificación de permisos una vez que la funcionalidad básica funcione
@@ -71,7 +70,7 @@ export const POST = async (
 ) => {
   try {
     const { id: user_id } = req.params
-    const longhornService = req.scope.resolve(LONGHORN_MODULE)
+    const longhornService = req.scope.resolve("longhorn")
 
     // Por ahora saltamos la verificación de permisos hasta que esté funcionando
     // TODO: Implementar verificación de permisos una vez que la funcionalidad básica funcione
@@ -151,7 +150,7 @@ export const DELETE = async (
 ) => {
   try {
     const { id: user_id } = req.params
-    const longhornService = req.scope.resolve(LONGHORN_MODULE)
+    const longhornService = req.scope.resolve("longhorn")
 
     // Por ahora saltamos la verificación de permisos hasta que esté funcionando
     // TODO: Implementar verificación de permisos una vez que la funcionalidad básica funcione

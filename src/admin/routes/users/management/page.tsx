@@ -40,6 +40,8 @@ const UsersManagement = () => {
     first_name: "",
     last_name: "",
     avatar_url: "",
+    password: "",
+    confirm_password: "",
   })
   const [notification, setNotification] = useState<Notification | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -51,6 +53,67 @@ const UsersManagement = () => {
   const [showDuplicateRoleModal, setShowDuplicateRoleModal] = useState(false)
   const [duplicateRoleInfo, setDuplicateRoleInfo] = useState<RoleAssignmentData | null>(null)
   const [isFiltered, setIsFiltered] = useState(false)
+
+  // Helper function to get authentication headers
+  const getAuthHeaders = () => {
+    // Try to get token from various sources
+    const tokenFromLocalStorage = localStorage.getItem('medusa_admin_token')
+    const tokenFromSessionStorage = sessionStorage.getItem('medusa_admin_token')
+    const tokenFromCookie = document.cookie.split('; ').find(row => row.startsWith('medusa_admin_token='))?.split('=')[1]
+    
+    const token = tokenFromLocalStorage || tokenFromSessionStorage || tokenFromCookie
+    
+    console.log('🔍 Auth Debug:', {
+      localStorage: tokenFromLocalStorage ? 'Found' : 'Not found',
+      sessionStorage: tokenFromSessionStorage ? 'Found' : 'Not found', 
+      cookie: tokenFromCookie ? 'Found' : 'Not found',
+      finalToken: token ? `${token.substring(0, 20)}...` : 'NO TOKEN FOUND',
+      allCookies: document.cookie
+    })
+    
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    }
+  }
+
+  // Helper function to make authenticated requests
+  const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}) => {
+    try {
+      const headers = {
+        ...getAuthHeaders(),
+        ...options.headers
+      }
+      
+      console.log('🚀 Making request to:', url, {
+        method: options.method || 'GET',
+        hasAuthHeader: 'Authorization' in headers,
+        authHeader: headers.Authorization ? `${headers.Authorization.substring(0, 30)}...` : 'Missing'
+      })
+      
+      const response = await fetch(url, {
+        ...options,
+        headers
+      })
+      
+      console.log('📜 Response status:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Request failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        })
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      return response
+    } catch (error) {
+      console.error('❌ Request error:', error)
+      throw error
+    }
+  }
 
   // Show notification for 3 seconds
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
@@ -76,7 +139,7 @@ const UsersManagement = () => {
 
   const fetchUsers = async (): Promise<User[]> => {
     try {
-      const response = await fetch("/admin/longhorn/users")
+      const response = await makeAuthenticatedRequest("/admin/longhorn/users")
       const data = await response.json()
       const usersData = (data.users as User[]) || []
       setUsers(usersData)
@@ -84,19 +147,21 @@ const UsersManagement = () => {
       return usersData
     } catch (error) {
       console.error("Error fetching users:", error)
+      showNotification("Error al cargar usuarios", "error")
       return []
     }
   }
 
   const fetchRoles = async (): Promise<Role[]> => {
     try {
-      const response = await fetch("/admin/longhorn/roles")
+      const response = await makeAuthenticatedRequest("/admin/longhorn/roles")
       const data = await response.json()
       const rolesData = (data.roles as Role[]) || []
       setRoles(rolesData)
       return rolesData
     } catch (error) {
       console.error("Error fetching roles:", error)
+      showNotification("Error al cargar roles", "error")
       return []
     }
   }
@@ -107,38 +172,37 @@ const UsersManagement = () => {
       const userRolesMap: Record<string, Role[]> = {}
       
       for (const user of usersData) {
-        const response = await fetch(`/admin/longhorn/users/${user.id}/roles`)
-        if (response.ok) {
-          const data = await response.json()
-          
-          // Procesar los roles de la respuesta
-          const processedRoles = (data.roles || []).map((roleData: any) => {
-            // Si el roleData tiene la estructura { role: { ... } }
-            if (roleData.role) {
-              return {
-                id: roleData.role.id,
-                name: roleData.role.name,
-                type: roleData.role.type,
-                permissions: roleData.role.permissions || []
-              }
+        const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${user.id}/roles`)
+        const data = await response.json()
+        
+        // Procesar los roles de la respuesta
+        const processedRoles = (data.roles || []).map((roleData: any) => {
+          // Si el roleData tiene la estructura { role: { ... } }
+          if (roleData.role) {
+            return {
+              id: roleData.role.id,
+              name: roleData.role.name,
+              type: roleData.role.type,
+              permissions: roleData.role.permissions || []
             }
-            // Si el roleData es directamente el rol
-            else {
-              return {
-                id: roleData.id,
-                name: roleData.name,
-                type: roleData.type,
-                permissions: roleData.permissions || []
-              }
+          }
+          // Si el roleData es directamente el rol
+          else {
+            return {
+              id: roleData.id,
+              name: roleData.name,
+              type: roleData.type,
+              permissions: roleData.permissions || []
             }
-          })
-          
-          userRolesMap[user.id] = processedRoles
-        }
+          }
+        })
+        
+        userRolesMap[user.id] = processedRoles
       }
       setUserRoles(userRolesMap)
     } catch (error) {
       console.error("Error fetching user roles:", error)
+      showNotification("Error al cargar roles de usuarios", "error")
     }
   }
 
@@ -149,16 +213,52 @@ const UsersManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Validaciones específicas para creación vs edición
+    if (!editingUser) {
+      // Para nuevos usuarios, contraseña es obligatoria
+      if (!formData.password) {
+        showNotification("La contraseña es obligatoria para nuevos usuarios", "error")
+        return
+      }
+      
+      if (formData.password !== formData.confirm_password) {
+        showNotification("Las contraseñas no coinciden", "error")
+        return
+      }
+      
+      if (formData.password.length < 6) {
+        showNotification("La contraseña debe tener al menos 6 caracteres", "error")
+        return
+      }
+    } else {
+      // Para edición, solo validar si se proporciona nueva contraseña
+      if (formData.password && formData.password !== formData.confirm_password) {
+        showNotification("Las contraseñas no coinciden", "error")
+        return
+      }
+      
+      if (formData.password && formData.password.length < 6) {
+        showNotification("La contraseña debe tener al menos 6 caracteres", "error")
+        return
+      }
+    }
+    
     try {
       const url = editingUser ? `/admin/longhorn/users/${editingUser.id}` : "/admin/longhorn/users"
       const method = editingUser ? "PUT" : "POST"
       
-      const response = await fetch(url, {
+      // Preparar datos para envío
+      const submitData = {
+        email: formData.email,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        avatar_url: formData.avatar_url,
+        ...((!editingUser || formData.password) && { password: formData.password })
+      }
+      
+      const response = await makeAuthenticatedRequest(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       })
 
       if (response.ok) {
@@ -184,7 +284,7 @@ const UsersManagement = () => {
     if (!userToDelete) return
 
     try {
-      const response = await fetch(`/admin/longhorn/users/${userToDelete.id}`, {
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${userToDelete.id}`, {
         method: "DELETE",
       })
 
@@ -209,6 +309,8 @@ const UsersManagement = () => {
       first_name: "",
       last_name: "",
       avatar_url: "",
+      password: "",
+      confirm_password: "",
     })
     setEditingUser(null)
     setShowCreateForm(false)
@@ -221,6 +323,8 @@ const UsersManagement = () => {
       first_name: user.first_name || "",
       last_name: user.last_name || "",
       avatar_url: user.avatar_url || "",
+      password: "", // No prellenar contraseña en edición
+      confirm_password: "",
     })
     setShowCreateForm(true)
   }
@@ -234,11 +338,8 @@ const UsersManagement = () => {
     if (!roleAssignmentData) return
 
     try {
-      const response = await fetch(`/admin/longhorn/users/${roleAssignmentData.user.id}/roles`, {
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleAssignmentData.user.id}/roles`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ role_id: roleAssignmentData.role.id }),
       })
 
@@ -278,11 +379,8 @@ const UsersManagement = () => {
     if (!roleRemovalData) return
 
     try {
-      const response = await fetch(`/admin/longhorn/users/${roleRemovalData.user.id}/roles`, {
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleRemovalData.user.id}/roles`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ 
           role_id: roleRemovalData.role.id 
         }),
@@ -397,6 +495,38 @@ const UsersManagement = () => {
                   value={formData.avatar_url}
                   onChange={(e) => setFormData(prev => ({ ...prev, avatar_url: e.target.value }))}
                   className="w-full p-2 border border-ui-border-base rounded-md bg-ui-bg-base text-ui-fg-base"
+                />
+              </div>
+            </div>
+
+            {/* Campos de contraseña */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-ui-fg-base text-sm font-medium mb-1">
+                  Contraseña {!editingUser && <span className="text-ui-fg-error">*</span>}
+                  {editingUser && <span className="text-ui-fg-subtle text-xs">(dejar vacío para mantener actual)</span>}
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full p-2 border border-ui-border-base rounded-md bg-ui-bg-base text-ui-fg-base"
+                  placeholder={editingUser ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div>
+                <label className="block text-ui-fg-base text-sm font-medium mb-1">
+                  Confirmar Contraseña {!editingUser && <span className="text-ui-fg-error">*</span>}
+                </label>
+                <input
+                  type="password"
+                  value={formData.confirm_password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, confirm_password: e.target.value }))}
+                  className="w-full p-2 border border-ui-border-base rounded-md bg-ui-bg-base text-ui-fg-base"
+                  placeholder={editingUser ? "Confirmar nueva contraseña" : "Repetir contraseña"}
+                  autoComplete="new-password"
                 />
               </div>
             </div>
