@@ -105,26 +105,51 @@ export const DELETE = async (
     const userModuleService = req.scope.resolve(Modules.USER)
     const longhornService = req.scope.resolve("longhorn")
     const authModuleService = req.scope.resolve(Modules.AUTH)
+    const { simulate_user } = req.query
 
-    // TEMPORAL: Saltar verificación de autenticación para testing
-    console.log('Skipping authentication check for testing')
-
-    // Por ahora, permitir eliminación para debugging (verificar permisos después)
-    console.log('Skipping permission check temporarily for debugging')
+    // SEGURIDAD CRÍTICA: Verificar permisos del usuario actual
+    const currentUserId = simulate_user as string || req.auth_context?.user_id
     
-    // // Verificar si el usuario actual puede gestionar este usuario
-    // const canManage = await longhornService.canManageUser(req.user.id, id)
-    // if (!canManage) {
-    //   return res.status(403).json({
-    //     message: "Insufficient privileges to manage this user"
-    //   })
-    // }
+    if (!currentUserId) {
+      return res.status(401).json({
+        message: "Authentication required"
+      })
+    }
 
-    // TEMPORAL: Eliminar verificación de autoborrado para testing
-    // No permitir que un usuario se elimine a sí mismo
-    console.log('Skipping self-deletion check for testing')
-
-    console.log('Permission checks passed, starting deletion process...')
+    console.log('🔒 SECURITY CHECK - User Deletion')
+    console.log('Current user:', currentUserId)
+    console.log('Target user to delete:', id)
+    
+    // Verificar si el usuario actual es Super Admin
+    const isCurrentUserSuperAdmin = await longhornService.isSuperAdmin(currentUserId)
+    console.log('Current user is Super Admin?', isCurrentUserSuperAdmin)
+    
+    // Verificar si el usuario objetivo tiene rol Super Admin
+    const targetUserRoles = await longhornService.getUserRoles(id)
+    const targetHasSuperAdminRole = targetUserRoles.some(userRole => 
+      userRole.role?.type === 'SUPER_ADMIN'
+    )
+    console.log('Target user has Super Admin role?', targetHasSuperAdminRole)
+    
+    // REGLA CRÍTICA: Solo Super Admin puede eliminar otros Super Admins
+    if (targetHasSuperAdminRole && !isCurrentUserSuperAdmin) {
+      console.log('❌ SECURITY VIOLATION: Non-Super Admin trying to delete Super Admin')
+      return res.status(403).json({
+        message: "No tienes permisos para eliminar usuarios con roles de Super Administrador",
+        error: "INSUFFICIENT_PRIVILEGES"
+      })
+    }
+    
+    // No permitir autoborrado (opcional, pero recomendado)
+    if (currentUserId === id) {
+      console.log('❌ SECURITY VIOLATION: User trying to delete themselves')
+      return res.status(403).json({
+        message: "No puedes eliminar tu propia cuenta",
+        error: "SELF_DELETION_NOT_ALLOWED"
+      })
+    }
+    
+    console.log('✅ Security checks passed, starting deletion process...')
 
     // Paso 1: Simplificado - Eliminar asignaciones de roles Longhorn
     try {

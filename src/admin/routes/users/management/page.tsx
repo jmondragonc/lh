@@ -139,11 +139,16 @@ const UsersManagement = () => {
 
   const fetchUsers = async (): Promise<User[]> => {
     try {
-      const response = await makeAuthenticatedRequest("/admin/longhorn/users")
+      // SIMULACIÓN TEMPORAL: Usar mismo parámetro que roles para consistency
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
+      console.log('🔍 USER FETCH DEBUG - Using simulated user:', simulateUser)
+      
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users?simulate_user=${simulateUser}`)
       const data = await response.json()
       const usersData = (data.users as User[]) || []
       setUsers(usersData)
       setIsFiltered(data.filtered || false)
+      console.log('🔍 USER FETCH DEBUG - Users loaded:', usersData.length, 'filtered:', data.filtered)
       return usersData
     } catch (error) {
       console.error("Error fetching users:", error)
@@ -154,7 +159,10 @@ const UsersManagement = () => {
 
   const fetchRoles = async (): Promise<Role[]> => {
     try {
-      const response = await makeAuthenticatedRequest("/admin/longhorn/roles")
+      // SIMULACIÓN TEMPORAL: Usar mismo parámetro para consistency
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
+      
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/roles?simulate_user=${simulateUser}`)
       const data = await response.json()
       const rolesData = (data.roles as Role[]) || []
       setRoles(rolesData)
@@ -284,7 +292,10 @@ const UsersManagement = () => {
     if (!userToDelete) return
 
     try {
-      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${userToDelete.id}`, {
+      // AGREGADO: Pasar parámetro simulate_user para validaciones de seguridad
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
+      
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${userToDelete.id}?simulate_user=${simulateUser}`, {
         method: "DELETE",
       })
 
@@ -292,7 +303,20 @@ const UsersManagement = () => {
         await fetchUsers()
         showNotification("Usuario eliminado exitosamente", "success")
       } else {
-        showNotification("Error al eliminar el usuario", "error")
+        const errorData = await response.json()
+        
+        // Manejar errores de seguridad específicos
+        if (response.status === 403) {
+          if (errorData.error === 'INSUFFICIENT_PRIVILEGES') {
+            showNotification("🚨 " + (errorData.message || "No tienes permisos para eliminar este usuario"), "error")
+          } else if (errorData.error === 'SELF_DELETION_NOT_ALLOWED') {
+            showNotification("⚠️ " + (errorData.message || "No puedes eliminar tu propia cuenta"), "error")
+          } else {
+            showNotification("❌ Acceso denegado: " + (errorData.message || "Permisos insuficientes"), "error")
+          }
+        } else {
+          showNotification(errorData.message || "Error al eliminar el usuario", "error")
+        }
       }
     } catch (error) {
       console.error("Error deleting user:", error)
@@ -338,7 +362,10 @@ const UsersManagement = () => {
     if (!roleAssignmentData) return
 
     try {
-      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleAssignmentData.user.id}/roles`, {
+      // AGREGADO: Pasar parámetro simulate_user para validaciones de seguridad
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
+      
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleAssignmentData.user.id}/roles?simulate_user=${simulateUser}`, {
         method: "POST",
         body: JSON.stringify({ role_id: roleAssignmentData.role.id }),
       })
@@ -350,8 +377,16 @@ const UsersManagement = () => {
       } else {
         const errorData = await response.json()
         
+        // Manejar errores de seguridad específicos
+        if (response.status === 403) {
+          if (errorData.error === 'INSUFFICIENT_PRIVILEGES') {
+            showNotification("🚨 " + (errorData.message || "No tienes permisos para esta acción"), "error")
+          } else {
+            showNotification("❌ Acceso denegado: " + (errorData.message || "Permisos insuficientes"), "error")
+          }
+        }
         // Verificar si es un error de rol duplicado
-        if (response.status === 400 && 
+        else if (response.status === 400 && 
             (errorData.message?.includes("already has this role") || 
              errorData.error === "ROLE_ALREADY_EXISTS")) {
           // Mostrar modal específico para rol duplicado
@@ -379,7 +414,10 @@ const UsersManagement = () => {
     if (!roleRemovalData) return
 
     try {
-      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleRemovalData.user.id}/roles`, {
+      // AGREGADO: Pasar parámetro simulate_user para validaciones de seguridad
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
+      
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleRemovalData.user.id}/roles?simulate_user=${simulateUser}`, {
         method: "DELETE",
         body: JSON.stringify({ 
           role_id: roleRemovalData.role.id 
@@ -391,7 +429,21 @@ const UsersManagement = () => {
         await fetchAllUserRoles() // Refresh user roles
       } else {
         const errorData = await response.json()
-        showNotification(errorData.message || "Error al remover rol", "error")
+        
+        // Manejar errores de seguridad específicos
+        if (response.status === 403) {
+          if (errorData.error === 'INSUFFICIENT_PRIVILEGES') {
+            showNotification("🚨 " + (errorData.message || "No tienes permisos para esta acción"), "error")
+          } else if (errorData.error === 'CANNOT_REMOVE_OWN_MANAGER_ROLE') {
+            showNotification("🔒 " + (errorData.message || "No puedes remover tu propio rol de gerente"), "error")
+          } else if (errorData.error === 'CANNOT_REMOVE_OWN_SUPER_ADMIN_ROLE') {
+            showNotification("🔒 " + (errorData.message || "No puedes remover tu propio rol de Super Administrador"), "error")
+          } else {
+            showNotification("❌ Acceso denegado: " + (errorData.message || "Permisos insuficientes"), "error")
+          }
+        } else {
+          showNotification(errorData.message || "Error al remover rol", "error")
+        }
       }
     } catch (error) {
       console.error("Error removing role:", error)
@@ -587,21 +639,39 @@ const UsersManagement = () => {
                         <span className="text-ui-fg-subtle text-xs">Roles: </span>
                         {getUserRoles(user.id).length > 0 ? (
                           <div className="flex gap-1 mt-1 flex-wrap">
-                            {getUserRoles(user.id).map((role) => (
-                              <div
-                                key={role.id}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-ui-tag-blue-bg text-ui-tag-blue-text rounded border"
-                              >
-                                <span>{role.name}</span>
-                                <button
-                                  onClick={() => handleRemoveRoleClick(user, role)}
-                                  className="text-ui-tag-blue-text hover:text-ui-fg-error transition-colors ml-1"
-                                  title="Remover rol"
+                            {getUserRoles(user.id).map((role) => {
+                              // Determinar si este usuario puede remover este rol específico
+                              const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
+                              const isCurrentUser = user.id === simulateUser
+                              const isRemovingOwnManagerRole = isCurrentUser && role.type === 'STORE_MANAGER'
+                              const isRemovingOwnSuperAdminRole = isCurrentUser && role.type === 'SUPER_ADMIN'
+                              const canRemoveRole = !isRemovingOwnManagerRole && !isRemovingOwnSuperAdminRole
+                              
+                              return (
+                                <div
+                                  key={role.id}
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-ui-tag-blue-bg text-ui-tag-blue-text rounded border"
                                 >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
+                                  <span>{role.name}</span>
+                                  {canRemoveRole ? (
+                                    <button
+                                      onClick={() => handleRemoveRoleClick(user, role)}
+                                      className="text-ui-tag-blue-text hover:text-ui-fg-error transition-colors ml-1"
+                                      title="Remover rol"
+                                    >
+                                      ×
+                                    </button>
+                                  ) : (
+                                    <span 
+                                      className="text-ui-fg-muted ml-1 cursor-not-allowed"
+                                      title="No puedes remover tu propio rol de administración"
+                                    >
+                                      🔒
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            })}
                           </div>
                         ) : (
                           <span className="text-ui-fg-muted text-xs italic">Sin roles asignados</span>

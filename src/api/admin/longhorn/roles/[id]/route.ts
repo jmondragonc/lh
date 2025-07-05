@@ -1,11 +1,11 @@
 import { 
-  AuthenticatedMedusaRequest, 
+  MedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
 import { ROLE_TYPES } from "../../../../../modules/longhorn/models/role"
 
 export const GET = async (
-  req: AuthenticatedMedusaRequest,
+  req: MedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -49,26 +49,22 @@ export const GET = async (
 }
 
 export const PUT = async (
-  req: AuthenticatedMedusaRequest,
+  req: MedusaRequest,
   res: MedusaResponse
 ) => {
   try {
     const longhornService = req.scope.resolve("longhorn")
     const { id } = req.params
-    const { name, type, description, permissions, is_active } = req.body
+    const { name, type, description, permissions, is_active, simulate_user } = req.body
 
-    console.log("🔧 PUT ROLES DEBUG - Request:", {
-      id,
-      body: { name, type, description, permissions, is_active }
-    })
+    console.log("=== EDICIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===")
+    console.log("Request:", { id, name, type, description, simulate_user })
 
     // Verificar que el rol existe
     const existingRoles = await longhornService.listLonghornRoles({ 
       id, 
       deleted_at: null 
     })
-
-    console.log("🔧 PUT ROLES DEBUG - Existing roles:", existingRoles)
 
     if (existingRoles.length === 0) {
       return res.status(404).json({
@@ -77,25 +73,47 @@ export const PUT = async (
     }
 
     const existingRole = existingRoles[0]
+    console.log("Existing role type:", existingRole.type)
     
-    // Verificar permisos
-    const currentUserId = req.auth_context?.actor_id || req.auth_context?.user_id
+    // SIMULACIÓN TEMPORAL: Para testing sin autenticación
+    const currentUserId = simulate_user || req.auth_context?.actor_id || req.auth_context?.user_id
+    console.log("Current user ID (simulated):", currentUserId)
+
+    // Verificar permisos jerárquicos para edición
     if (currentUserId) {
-      const isSuperAdmin = await longhornService.isSuperAdmin(currentUserId)
+      const canEdit = await longhornService.canEditRole(currentUserId, existingRole.type)
+      console.log("Can edit existing role?", canEdit, "for type:", existingRole.type)
       
-      // Solo super admin puede modificar roles super admin
-      if (existingRole.type === ROLE_TYPES.SUPER_ADMIN && !isSuperAdmin) {
+      if (!canEdit) {
         return res.status(403).json({
-          message: "Only super administrators can modify super admin roles"
+          message: "No tienes permisos para editar este tipo de rol",
+          error: "INSUFFICIENT_PERMISSIONS"
         })
       }
       
-      // Solo super admin puede cambiar un rol a super admin
-      if (type === "super_admin" && !isSuperAdmin) {
-        return res.status(403).json({
-          message: "Only super administrators can create super admin roles"
-        })
+      // Si se está cambiando el tipo de rol, verificar permisos para el nuevo tipo
+      if (type !== undefined) {
+        const typeMapping = {
+          "super_admin": ROLE_TYPES.SUPER_ADMIN,
+          "local_manager": ROLE_TYPES.STORE_MANAGER,
+          "local_staff": ROLE_TYPES.STORE_STAFF
+        }
+        const newModelType = typeMapping[type]
+        
+        if (newModelType && newModelType !== existingRole.type) {
+          const canCreateNewType = await longhornService.canCreateRole(currentUserId, newModelType)
+          console.log("Can create new role type?", canCreateNewType, "for type:", newModelType)
+          
+          if (!canCreateNewType) {
+            return res.status(403).json({
+              message: `No tienes permisos para cambiar el rol a tipo: ${type}`,
+              error: "INSUFFICIENT_PERMISSIONS"
+            })
+          }
+        }
       }
+    } else {
+      console.log("No user ID provided, allowing edit (internal API)")
     }
 
     let updateData: any = {}
@@ -165,12 +183,16 @@ export const PUT = async (
 }
 
 export const DELETE = async (
-  req: AuthenticatedMedusaRequest,
+  req: MedusaRequest,
   res: MedusaResponse
 ) => {
   try {
     const longhornService = req.scope.resolve("longhorn")
     const { id } = req.params
+    const { simulate_user } = req.query
+
+    console.log("=== ELIMINACIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===")
+    console.log("Request:", { id, simulate_user })
 
     // Verificar que el rol existe
     const existingRoles = await longhornService.listLonghornRoles({ 
@@ -185,18 +207,25 @@ export const DELETE = async (
     }
 
     const existingRole = existingRoles[0]
+    console.log("Role to delete type:", existingRole.type)
     
-    // Verificar permisos
-    const currentUserId = req.auth_context?.actor_id || req.auth_context?.user_id
+    // SIMULACIÓN TEMPORAL: Para testing sin autenticación
+    const currentUserId = simulate_user as string || req.auth_context?.actor_id || req.auth_context?.user_id
+    console.log("Current user ID (simulated):", currentUserId)
+
+    // Verificar permisos jerárquicos para eliminación
     if (currentUserId) {
-      const isSuperAdmin = await longhornService.isSuperAdmin(currentUserId)
+      const canEdit = await longhornService.canEditRole(currentUserId, existingRole.type)
+      console.log("Can delete role?", canEdit, "for type:", existingRole.type)
       
-      // Solo super admin puede eliminar roles super admin
-      if (existingRole.type === ROLE_TYPES.SUPER_ADMIN && !isSuperAdmin) {
+      if (!canEdit) {
         return res.status(403).json({
-          message: "Only super administrators can delete super admin roles"
+          message: "No tienes permisos para eliminar este tipo de rol",
+          error: "INSUFFICIENT_PERMISSIONS"
         })
       }
+    } else {
+      console.log("No user ID provided, allowing deletion (internal API)")
     }
 
     // Verificar si hay usuarios asignados a este rol

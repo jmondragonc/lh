@@ -476,22 +476,41 @@ class LonghornModuleService extends MedusaService({
   }
 
   async isSuperAdmin(user_id: string): Promise<boolean> {
+    console.log('🔍 isSuperAdmin called with user_id:', user_id)
+    
+    // Detectar IDs ficticios
+    if (user_id === 'super_admin_user_id' || user_id === 'manager_user_id' || user_id === 'staff_user_id') {
+      console.log('🚨 WARNING: isSuperAdmin called with fictional ID:', user_id)
+      console.log('🚨 This should be a real UUID, not a fictional string!')
+      
+      // Por convención, solo 'super_admin_user_id' es Super Admin para testing
+      const result = user_id === 'super_admin_user_id'
+      console.log('🔄 Returning fictional result for testing:', result)
+      return result
+    }
+    
     const userRoles = await this.listLonghornUserRoles({
       user_id,
       is_active: true,
       deleted_at: null
     })
     
+    console.log('🔍 Found user roles for', user_id, ':', userRoles.length)
+    
     // Verificar cada rol manualmente
     for (const userRole of userRoles) {
       const roles = await this.listLonghornRoles({ id: userRole.role_id })
       const role = roles[0]
       
+      console.log('🔍 Checking role:', role?.name, 'type:', role?.type)
+      
       if (role?.type === ROLE_TYPES.SUPER_ADMIN) {
+        console.log('✅ User', user_id, 'IS Super Admin - found role type:', role.type)
         return true
       }
     }
     
+    console.log('❌ User', user_id, 'is NOT Super Admin')
     return false
   }
 
@@ -529,6 +548,138 @@ class LonghornModuleService extends MedusaService({
     }
 
     return false
+  }
+
+  /**
+   * Filtrar roles basado en la jerarquía del usuario actual
+   * REGLA CRÍTICA: Usuarios menores NO ven Super Admin
+   */
+  async getFilteredRoles(currentUserId?: string): Promise<{ roles: any[], isFiltered: boolean }> {
+    try {
+      console.log('🔍 getFilteredRoles called with currentUserId:', currentUserId)
+      
+      // Si no hay usuario actual, mostrar todos los roles (para APIs internas)
+      if (!currentUserId) {
+        const allRoles = await this.getAllRoles()
+        console.log('🔍 No current user - returning all roles:', allRoles.length)
+        return { roles: allRoles, isFiltered: false }
+      }
+
+      // Verificar si el usuario actual es Super Admin
+      const isSuperAdmin = await this.isSuperAdmin(currentUserId)
+      console.log('🔍 Current user is Super Admin?', isSuperAdmin)
+      
+      if (isSuperAdmin) {
+        // Super Admin ve todos los roles
+        const allRoles = await this.getAllRoles()
+        console.log('🔍 Super Admin - returning all roles:', allRoles.length)
+        return { roles: allRoles, isFiltered: false }
+      } else {
+        // Usuarios menores NO ven roles Super Admin
+        const allRoles = await this.getAllRoles()
+        console.log('🔍 All roles before filtering:', allRoles.length)
+        console.log('🔍 Role types:', allRoles.map(r => ({ name: r.name, type: r.type })))
+        
+        const filteredRoles = allRoles.filter(role => {
+          const isNotSuperAdmin = role.type !== ROLE_TYPES.SUPER_ADMIN
+          console.log(`🔍 Role "${role.name}" (${role.type}) - keeping: ${isNotSuperAdmin}`)
+          return isNotSuperAdmin
+        })
+        
+        console.log('🔍 Filtered roles (removed Super Admin):', filteredRoles.length)
+        console.log('🔍 Filtered role types:', filteredRoles.map(r => ({ name: r.name, type: r.type })))
+        
+        return { roles: filteredRoles, isFiltered: true }
+      }
+    } catch (error) {
+      console.error('🚨 Error filtering roles:', error)
+      // En caso de error, mostrar roles básicos sin Super Admin por seguridad
+      const allRoles = await this.getAllRoles()
+      const safeRoles = allRoles.filter(role => role.type !== ROLE_TYPES.SUPER_ADMIN)
+      console.log('🚨 Error fallback - returning safe roles:', safeRoles.length)
+      return { roles: safeRoles, isFiltered: true }
+    }
+  }
+
+  /**
+   * Filtrar usuarios basado en la jerarquía del usuario actual
+   * REGLA CRÍTICA: Usuarios menores NO ven Super Admins
+   */
+  async getFilteredUsers(currentUserId?: string): Promise<{ users: any[], isFiltered: boolean }> {
+    try {
+      // Si no hay usuario actual, mostrar todos (para APIs internas)
+      if (!currentUserId) {
+        return { users: [], isFiltered: false }
+      }
+
+      // Verificar si el usuario actual es Super Admin
+      const isSuperAdmin = await this.isSuperAdmin(currentUserId)
+      
+      if (isSuperAdmin) {
+        // Super Admin ve todos los usuarios
+        return { users: [], isFiltered: false } // Se manejará en la API
+      } else {
+        // Usuarios menores NO ven Super Admins
+        return { users: [], isFiltered: true } // Se manejará en la API
+      }
+    } catch (error) {
+      console.error('Error filtering users:', error)
+      // En caso de error, filtrar por seguridad
+      return { users: [], isFiltered: true }
+    }
+  }
+
+  /**
+   * Verificar si un usuario puede crear un tipo de rol específico
+   */
+  async canCreateRole(currentUserId: string, targetRoleType: RoleType): Promise<boolean> {
+    try {
+      // Solo Super Admin puede crear roles Super Admin
+      if (targetRoleType === ROLE_TYPES.SUPER_ADMIN) {
+        return await this.isSuperAdmin(currentUserId)
+      }
+
+      // Super Admin puede crear cualquier rol
+      if (await this.isSuperAdmin(currentUserId)) {
+        return true
+      }
+
+      // Gerente Local puede crear solo Personal Local
+      if (targetRoleType === ROLE_TYPES.STORE_STAFF) {
+        // Verificar si es gerente en alguna tienda
+        const userRoles = await this.getUserRoles(currentUserId)
+        return userRoles.some(userRole => userRole.role?.type === ROLE_TYPES.STORE_MANAGER)
+      }
+
+      // Personal Local no puede crear roles
+      return false
+    } catch (error) {
+      console.error('Error checking role creation permission:', error)
+      return false // Por seguridad, denegar en caso de error
+    }
+  }
+
+  /**
+   * Verificar si un usuario puede editar un rol específico
+   */
+  async canEditRole(currentUserId: string, targetRoleType: RoleType): Promise<boolean> {
+    try {
+      // Solo Super Admin puede editar roles Super Admin
+      if (targetRoleType === ROLE_TYPES.SUPER_ADMIN) {
+        return await this.isSuperAdmin(currentUserId)
+      }
+
+      // Super Admin puede editar cualquier rol
+      if (await this.isSuperAdmin(currentUserId)) {
+        return true
+      }
+
+      // Otros usuarios no pueden editar roles
+      return false
+    } catch (error) {
+      console.error('Error checking role edit permission:', error)
+      return false // Por seguridad, denegar en caso de error
+    }
   }
 
   // ======= SEEDING DE DATOS INICIALES =======

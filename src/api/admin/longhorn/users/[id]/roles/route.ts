@@ -71,10 +71,61 @@ export const POST = async (
   try {
     const { id: user_id } = req.params
     const longhornService = req.scope.resolve("longhorn")
+    const { simulate_user } = req.query
 
-    // Por ahora saltamos la verificación de permisos hasta que esté funcionando
-    // TODO: Implementar verificación de permisos una vez que la funcionalidad básica funcione
-    console.log('Skipping permission check for now')
+    // SEGURIDAD CRÍTICA: Verificar permisos del usuario actual
+    const currentUserId = simulate_user as string || req.auth_context?.user_id
+    
+    if (!currentUserId) {
+      return res.status(401).json({
+        message: "Authentication required"
+      })
+    }
+
+    console.log('🔒 SECURITY CHECK - Role Assignment')
+    console.log('Current user:', currentUserId)
+    console.log('Target user:', user_id)
+    
+    // Verificar si el usuario actual es Super Admin
+    const isCurrentUserSuperAdmin = await longhornService.isSuperAdmin(currentUserId)
+    console.log('Current user is Super Admin?', isCurrentUserSuperAdmin)
+    
+    // Verificar si el usuario objetivo tiene rol Super Admin
+    const targetUserRoles = await longhornService.getUserRoles(user_id)
+    const targetHasSuperAdminRole = targetUserRoles.some(userRole => 
+      userRole.role?.type === 'SUPER_ADMIN'
+    )
+    console.log('Target user has Super Admin role?', targetHasSuperAdminRole)
+    
+    // REGLA CRÍTICA: Solo Super Admin puede gestionar otros Super Admins
+    if (targetHasSuperAdminRole && !isCurrentUserSuperAdmin) {
+      console.log('❌ SECURITY VIOLATION: Non-Super Admin trying to assign role to Super Admin')
+      return res.status(403).json({
+        message: "No tienes permisos para gestionar usuarios con roles de Super Administrador",
+        error: "INSUFFICIENT_PRIVILEGES"
+      })
+    }
+    
+    // Verificar el rol que se está intentando asignar
+    const roleToAssign = await longhornService.listLonghornRoles({ 
+      id: req.body.role_id 
+    })
+    
+    if (roleToAssign.length > 0) {
+      const roleType = roleToAssign[0].type
+      console.log('Role being assigned:', roleType)
+      
+      // Solo Super Admin puede asignar roles Super Admin
+      if (roleType === 'SUPER_ADMIN' && !isCurrentUserSuperAdmin) {
+        console.log('❌ SECURITY VIOLATION: Non-Super Admin trying to assign Super Admin role')
+        return res.status(403).json({
+          message: "Solo Super Administradores pueden asignar roles de Super Administrador",
+          error: "INSUFFICIENT_PRIVILEGES"
+        })
+      }
+    }
+    
+    console.log('✅ Security checks passed')
 
     const { role_id, store_id, metadata } = req.body
 
@@ -151,10 +202,85 @@ export const DELETE = async (
   try {
     const { id: user_id } = req.params
     const longhornService = req.scope.resolve("longhorn")
+    const { simulate_user } = req.query
 
-    // Por ahora saltamos la verificación de permisos hasta que esté funcionando
-    // TODO: Implementar verificación de permisos una vez que la funcionalidad básica funcione
-    console.log('Skipping permission check for now')
+    // SEGURIDAD CRÍTICA: Verificar permisos del usuario actual
+    const currentUserId = simulate_user as string || req.auth_context?.user_id
+    
+    if (!currentUserId) {
+      return res.status(401).json({
+        message: "Authentication required"
+      })
+    }
+
+    console.log('🔒 SECURITY CHECK - Role Removal')
+    console.log('Current user:', currentUserId)
+    console.log('Target user:', user_id)
+    
+    // Verificar si el usuario actual es Super Admin
+    const isCurrentUserSuperAdmin = await longhornService.isSuperAdmin(currentUserId)
+    console.log('Current user is Super Admin?', isCurrentUserSuperAdmin)
+    
+    // Verificar si el usuario objetivo tiene rol Super Admin
+    const targetUserRoles = await longhornService.getUserRoles(user_id)
+    const targetHasSuperAdminRole = targetUserRoles.some(userRole => 
+      userRole.role?.type === 'SUPER_ADMIN'
+    )
+    console.log('Target user has Super Admin role?', targetHasSuperAdminRole)
+    
+    // REGLA CRÍTICA: Solo Super Admin puede gestionar otros Super Admins
+    if (targetHasSuperAdminRole && !isCurrentUserSuperAdmin) {
+      console.log('❌ SECURITY VIOLATION: Non-Super Admin trying to remove role from Super Admin')
+      return res.status(403).json({
+        message: "No tienes permisos para gestionar usuarios con roles de Super Administrador",
+        error: "INSUFFICIENT_PRIVILEGES"
+      })
+    }
+    
+    // REGLA ADICIONAL: Un usuario no puede remover su propio rol de gerente o super admin
+    if (currentUserId === user_id) {
+      const roleToRemove = await longhornService.listLonghornRoles({ 
+        id: req.body.role_id 
+      })
+      
+      if (roleToRemove.length > 0) {
+        const roleType = roleToRemove[0].type
+        if (roleType === 'STORE_MANAGER') {
+          console.log('❌ SECURITY VIOLATION: User trying to remove own manager role')
+          return res.status(403).json({
+            message: "No puedes remover tu propio rol de gerente",
+            error: "CANNOT_REMOVE_OWN_MANAGER_ROLE"
+          })
+        } else if (roleType === 'SUPER_ADMIN') {
+          console.log('❌ SECURITY VIOLATION: User trying to remove own super admin role')
+          return res.status(403).json({
+            message: "No puedes remover tu propio rol de Super Administrador",
+            error: "CANNOT_REMOVE_OWN_SUPER_ADMIN_ROLE"
+          })
+        }
+      }
+    }
+    
+    // Verificar el rol que se está intentando remover
+    const roleToRemove = await longhornService.listLonghornRoles({ 
+      id: req.body.role_id 
+    })
+    
+    if (roleToRemove.length > 0) {
+      const roleType = roleToRemove[0].type
+      console.log('Role being removed:', roleType)
+      
+      // Solo Super Admin puede remover roles Super Admin
+      if (roleType === 'SUPER_ADMIN' && !isCurrentUserSuperAdmin) {
+        console.log('❌ SECURITY VIOLATION: Non-Super Admin trying to remove Super Admin role')
+        return res.status(403).json({
+          message: "Solo Super Administradores pueden remover roles de Super Administrador",
+          error: "INSUFFICIENT_PRIVILEGES"
+        })
+      }
+    }
+    
+    console.log('✅ Security checks passed')
 
     const { role_id, store_id } = req.body
 

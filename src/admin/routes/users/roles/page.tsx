@@ -87,7 +87,13 @@ const UserRolesManagement = () => {
   const fetchRoles = async () => {
     try {
       console.log("🔧 FETCH DEBUG - Starting fetch roles")
-      const response = await fetch("/admin/longhorn/roles")
+      
+      // SIMULACIÓN TEMPORAL: Diferentes tipos de usuarios para testing
+      // En producción esto se manejará automáticamente por el middleware de autenticación
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
+      console.log("🔧 SIMULATE DEBUG - Using simulated user:", simulateUser)
+      
+      const response = await fetch(`/admin/longhorn/roles?simulate_user=${simulateUser}`)
       const data = await response.json()
       
       console.log("🔧 FETCH DEBUG - Raw response:", data)
@@ -124,14 +130,21 @@ const UserRolesManagement = () => {
       const url = editingRole ? `/admin/longhorn/roles/${editingRole.id}` : "/admin/longhorn/roles"
       const method = editingRole ? "PUT" : "POST"
       
-      console.log("🔧 EDIT DEBUG - Request:", { url, method, body: formData })
+      // SIMULACIÓN TEMPORAL: Añadir simulate_user al body
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
+      const requestBody = {
+        ...formData,
+        simulate_user: simulateUser
+      }
+      
+      console.log("🔧 EDIT DEBUG - Request:", { url, method, body: requestBody })
       
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(requestBody),
       })
 
       const responseData = await response.json()
@@ -160,7 +173,10 @@ const UserRolesManagement = () => {
     if (!roleToDelete) return
 
     try {
-      const response = await fetch(`/admin/longhorn/roles/${roleToDelete.id}`, {
+      // SIMULACIÓN TEMPORAL: Añadir simulate_user al query
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
+      
+      const response = await fetch(`/admin/longhorn/roles/${roleToDelete.id}?simulate_user=${simulateUser}`, {
         method: "DELETE",
       })
 
@@ -289,17 +305,25 @@ const UserRolesManagement = () => {
             </p>
           )}
         </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color rounded-md hover:bg-ui-button-neutral-hover transition-colors text-sm font-medium flex items-center space-x-2"
-        >
-          <Users className="w-4 h-4" />
-          <span>{showCreateForm ? "Cancelar" : "Crear Rol"}</span>
-        </button>
+        {/* Solo Super Admin puede crear roles */}
+        {!isFiltered ? (
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color rounded-md hover:bg-ui-button-neutral-hover transition-colors text-sm font-medium flex items-center space-x-2"
+          >
+            <Users className="w-4 h-4" />
+            <span>{showCreateForm ? "Cancelar" : "Crear Rol"}</span>
+          </button>
+        ) : (
+          <div className="px-4 py-2 bg-ui-bg-subtle text-ui-fg-muted text-sm rounded-md border border-ui-border-base flex items-center space-x-2">
+            <span>🔒</span>
+            <span>Solo Super Admin puede crear roles</span>
+          </div>
+        )}
       </div>
 
-      {/* Create/Edit Form */}
-      {showCreateForm && (
+      {/* Create/Edit Form - Solo visible para Super Admin */}
+      {showCreateForm && !isFiltered && (
         <div className="mb-8 p-6 border border-ui-border-base rounded-md bg-ui-bg-base shadow-card-rest">
           <h2 className="text-ui-fg-base text-lg font-medium mb-4 flex items-center space-x-2">
             <Users className="w-5 h-5" />
@@ -419,12 +443,19 @@ const UserRolesManagement = () => {
             <Users className="w-12 h-12 text-ui-fg-muted mx-auto mb-4" />
             <p className="text-ui-fg-muted text-lg mb-2">No hay roles definidos</p>
             <p className="text-ui-fg-subtle text-sm mb-4">Crea el primer rol para comenzar a gestionar permisos</p>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color rounded-md hover:bg-ui-button-neutral-hover transition-colors text-sm font-medium"
-            >
-              Crear Primer Rol
-            </button>
+            {!isFiltered ? (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color rounded-md hover:bg-ui-button-neutral-hover transition-colors text-sm font-medium"
+              >
+                Crear Primer Rol
+              </button>
+            ) : (
+              <div className="px-4 py-2 bg-ui-bg-subtle text-ui-fg-muted text-sm rounded-md border border-ui-border-base inline-flex items-center space-x-2">
+                <span>🔒</span>
+                <span>Solo Super Admin puede crear roles</span>
+              </div>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-ui-border-base">
@@ -484,33 +515,43 @@ const UserRolesManagement = () => {
                     </div>
                     
                     <div className="flex space-x-2 ml-4">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          console.log("🔧 EDIT BUTTON DEBUG - Clicked for role:", role)
-                          handleEdit(role)
-                        }}
-                        className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color text-sm rounded-md hover:bg-ui-button-neutral-hover transition-colors flex items-center space-x-1"
-                        title="Editar rol"
-                        type="button"
-                      >
-                        <span>✏️</span>
-                        <span>Editar</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleDeleteClick(role)
-                        }}
-                        className="px-4 py-2 bg-ui-button-danger text-ui-fg-on-color text-sm rounded-md hover:bg-ui-button-danger-hover transition-colors flex items-center space-x-1"
-                        title="Eliminar rol"
-                        type="button"
-                      >
-                        <span>🗑️</span>
-                        <span>Eliminar</span>
-                      </button>
+                      {/* Solo Super Admin puede editar y eliminar roles */}
+                      {!isFiltered ? (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              console.log("🔧 EDIT BUTTON DEBUG - Clicked for role:", role)
+                              handleEdit(role)
+                            }}
+                            className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color text-sm rounded-md hover:bg-ui-button-neutral-hover transition-colors flex items-center space-x-1"
+                            title="Editar rol"
+                            type="button"
+                          >
+                            <span>✏️</span>
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleDeleteClick(role)
+                            }}
+                            className="px-4 py-2 bg-ui-button-danger text-ui-fg-on-color text-sm rounded-md hover:bg-ui-button-danger-hover transition-colors flex items-center space-x-1"
+                            title="Eliminar rol"
+                            type="button"
+                          >
+                            <span>🗑️</span>
+                            <span>Eliminar</span>
+                          </button>
+                        </>
+                      ) : (
+                        <div className="px-4 py-2 bg-ui-bg-subtle text-ui-fg-muted text-sm rounded-md border border-ui-border-base flex items-center space-x-1">
+                          <span>🔒</span>
+                          <span>Solo Super Admin puede gestionar roles</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
