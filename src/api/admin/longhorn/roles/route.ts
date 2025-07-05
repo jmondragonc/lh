@@ -1,11 +1,11 @@
 import { 
-  AuthenticatedMedusaRequest, 
+  MedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
 import { ROLE_TYPES } from "../../../../modules/longhorn/models/role"
 
 export const GET = async (
-  req: AuthenticatedMedusaRequest,
+  req: MedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -65,7 +65,7 @@ export const GET = async (
 }
 
 export const POST = async (
-  req: AuthenticatedMedusaRequest,
+  req: MedusaRequest,
   res: MedusaResponse
 ) => {
   try {
