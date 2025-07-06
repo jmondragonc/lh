@@ -84,6 +84,8 @@ export const GET = async (
         console.log('🔍 isSuperAdmin() returned:', isSuperAdmin)
         console.log('🔍 Type of isSuperAdmin result:', typeof isSuperAdmin)
         console.log('🔍 Is isSuperAdmin truthy?', !!isSuperAdmin)
+        console.log('🔍 CRITICAL: About to evaluate if condition with value:', isSuperAdmin)
+        console.log('🔍 CRITICAL: Condition will be:', isSuperAdmin ? 'TRUE (Super Admin block)' : 'FALSE (Non-Super Admin block)')
         
         if (isSuperAdmin) {
           // SUPER ADMIN VE TODO SIN RESTRICCIONES - CRÍTICO
@@ -92,15 +94,22 @@ export const GET = async (
           console.log('✅ Including other Super Admins')
           console.log('✅ Total users visible:', enrichedUsers.length)
           console.log('✅ User emails:', enrichedUsers.map(u => u.email).join(', '))
+          console.log('✅ CRITICAL: Setting filteredUsers = enrichedUsers (NO FILTER)')
+          console.log('✅ CRITICAL: Setting isFiltered = false')
           
           // CRÍTICO: Super Admin NO tiene filtrado
           filteredUsers = enrichedUsers
           isFiltered = false
+          
+          console.log('✅ POST-ASSIGNMENT: filteredUsers.length =', filteredUsers.length)
+          console.log('✅ POST-ASSIGNMENT: isFiltered =', isFiltered)
+          console.log('✅ SUPER ADMIN BLOCK COMPLETED SUCCESSFULLY')
         } else {
           // USUARIOS MENORES NO VEN SUPER ADMINS - APLICAR FILTRO
           console.log('\n🔒 NON-SUPER ADMIN USER CONFIRMED')
           console.log('🔒 APPLYING HIERARCHICAL FILTERING')
           console.log('🔒 Will hide Super Admin users from this user')
+          console.log('🔒 CRITICAL: This block should NOT execute for Super Admin')
           
           console.log('\n--- FILTERING PROCESS ---')
           const originalCount = enrichedUsers.length
@@ -166,6 +175,10 @@ export const GET = async (
     console.log('\n=== FINAL RESULTS ===')
     console.log('📊 Final users to return:', filteredUsers.length)
     console.log('📊 Hierarchy filtered?', isFiltered)
+    console.log('📊 Final user emails:', filteredUsers.map(u => u.email).join(', '))
+    console.log('📊 VERIFICATION: All users count =', enrichedUsers.length)
+    console.log('📊 VERIFICATION: Filtered users count =', filteredUsers.length)
+    console.log('📊 VERIFICATION: Users removed =', enrichedUsers.length - filteredUsers.length)
 
     res.json({
       users: filteredUsers,

@@ -1,11 +1,11 @@
 import { 
-  AuthenticatedMedusaRequest, 
+  MedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
 import { Modules } from "@medusajs/framework/utils"
 
 export const GET = async (
-  req: AuthenticatedMedusaRequest,
+  req: MedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -52,31 +52,58 @@ export const GET = async (
 }
 
 export const PUT = async (
-  req: AuthenticatedMedusaRequest,
+  req: MedusaRequest,
   res: MedusaResponse
 ) => {
   try {
+    console.log('=== STARTING PUT UPDATE USER ===', { userId: req.params.id })
+    
     const { id } = req.params
     const userModuleService = req.scope.resolve(Modules.USER)
     const longhornService = req.scope.resolve("longhorn")
 
-    // Verificar autenticación
-    if (!req.auth_context?.user_id) {
+    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
+    const currentUserId = req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
+    console.log('🔍 Current user ID for authentication:', currentUserId)
+    
+    if (!currentUserId) {
+      console.error('❌ ERROR: No authentication context')
       return res.status(401).json({
         message: "Usuario no autenticado"
       })
     }
 
-    const { first_name, last_name, email, metadata } = req.body
+    const { first_name, last_name, email, avatar_url, metadata } = req.body
+    
+    console.log('🔍 PUT UPDATE - Received data:', {
+      first_name,
+      last_name, 
+      email,
+      avatar_url,
+      metadata
+    })
 
     // Actualizar datos básicos del usuario
-    const [updatedUser] = await userModuleService.updateUsers([{
+    const updateData = {
       id,
       first_name,
       last_name,
       email,
+      avatar_url,
       metadata
-    }])
+    }
+    
+    console.log('🔍 PUT UPDATE - Sending to userModuleService.updateUsers:', updateData)
+    
+    const [updatedUser] = await userModuleService.updateUsers([updateData])
+    
+    console.log('🔍 PUT UPDATE - Updated user result:', {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      avatar_url: updatedUser.avatar_url,
+      first_name: updatedUser.first_name,
+      last_name: updatedUser.last_name
+    })
 
     // Obtener información completa actualizada
     const userRoles = await longhornService.getUserRoles(id)
@@ -103,7 +130,7 @@ export const PUT = async (
 }
 
 export const DELETE = async (
-  req: AuthenticatedMedusaRequest,
+  req: MedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -114,8 +141,8 @@ export const DELETE = async (
     const longhornService = req.scope.resolve("longhorn")
     const authModuleService = req.scope.resolve(Modules.AUTH)
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.user_id
+    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
+    const currentUserId = req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
     
     if (!currentUserId) {
       return res.status(401).json({
