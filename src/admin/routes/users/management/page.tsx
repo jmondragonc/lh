@@ -139,11 +139,14 @@ const UsersManagement = () => {
 
   const fetchUsers = async (): Promise<User[]> => {
     try {
-      const response = await makeAuthenticatedRequest("/admin/longhorn/users")
+      console.log('🔍 USER FETCH - Using real authentication')
+      
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users`)
       const data = await response.json()
       const usersData = (data.users as User[]) || []
       setUsers(usersData)
       setIsFiltered(data.filtered || false)
+      console.log('🔍 USER FETCH - Users loaded:', usersData.length, 'filtered:', data.filtered)
       return usersData
     } catch (error) {
       console.error("Error fetching users:", error)
@@ -154,7 +157,9 @@ const UsersManagement = () => {
 
   const fetchRoles = async (): Promise<Role[]> => {
     try {
-      const response = await makeAuthenticatedRequest("/admin/longhorn/roles")
+      console.log('🔍 ROLES FETCH - Using real authentication')
+      
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/roles`)
       const data = await response.json()
       const rolesData = (data.roles as Role[]) || []
       setRoles(rolesData)
@@ -292,7 +297,20 @@ const UsersManagement = () => {
         await fetchUsers()
         showNotification("Usuario eliminado exitosamente", "success")
       } else {
-        showNotification("Error al eliminar el usuario", "error")
+        const errorData = await response.json()
+        
+        // Manejar errores de seguridad específicos
+        if (response.status === 403) {
+          if (errorData.error === 'INSUFFICIENT_PRIVILEGES') {
+            showNotification("🚨 " + (errorData.message || "No tienes permisos para eliminar este usuario"), "error")
+          } else if (errorData.error === 'SELF_DELETION_NOT_ALLOWED') {
+            showNotification("⚠️ " + (errorData.message || "No puedes eliminar tu propia cuenta"), "error")
+          } else {
+            showNotification("❌ Acceso denegado: " + (errorData.message || "Permisos insuficientes"), "error")
+          }
+        } else {
+          showNotification(errorData.message || "Error al eliminar el usuario", "error")
+        }
       }
     } catch (error) {
       console.error("Error deleting user:", error)
@@ -350,8 +368,16 @@ const UsersManagement = () => {
       } else {
         const errorData = await response.json()
         
+        // Manejar errores de seguridad específicos
+        if (response.status === 403) {
+          if (errorData.error === 'INSUFFICIENT_PRIVILEGES') {
+            showNotification("🚨 " + (errorData.message || "No tienes permisos para esta acción"), "error")
+          } else {
+            showNotification("❌ Acceso denegado: " + (errorData.message || "Permisos insuficientes"), "error")
+          }
+        }
         // Verificar si es un error de rol duplicado
-        if (response.status === 400 && 
+        else if (response.status === 400 && 
             (errorData.message?.includes("already has this role") || 
              errorData.error === "ROLE_ALREADY_EXISTS")) {
           // Mostrar modal específico para rol duplicado
@@ -391,7 +417,21 @@ const UsersManagement = () => {
         await fetchAllUserRoles() // Refresh user roles
       } else {
         const errorData = await response.json()
-        showNotification(errorData.message || "Error al remover rol", "error")
+        
+        // Manejar errores de seguridad específicos
+        if (response.status === 403) {
+          if (errorData.error === 'INSUFFICIENT_PRIVILEGES') {
+            showNotification("🚨 " + (errorData.message || "No tienes permisos para esta acción"), "error")
+          } else if (errorData.error === 'CANNOT_REMOVE_OWN_MANAGER_ROLE') {
+            showNotification("🔒 " + (errorData.message || "No puedes remover tu propio rol de gerente"), "error")
+          } else if (errorData.error === 'CANNOT_REMOVE_OWN_SUPER_ADMIN_ROLE') {
+            showNotification("🔒 " + (errorData.message || "No puedes remover tu propio rol de Super Administrador"), "error")
+          } else {
+            showNotification("❌ Acceso denegado: " + (errorData.message || "Permisos insuficientes"), "error")
+          }
+        } else {
+          showNotification(errorData.message || "Error al remover rol", "error")
+        }
       }
     } catch (error) {
       console.error("Error removing role:", error)
@@ -587,21 +627,26 @@ const UsersManagement = () => {
                         <span className="text-ui-fg-subtle text-xs">Roles: </span>
                         {getUserRoles(user.id).length > 0 ? (
                           <div className="flex gap-1 mt-1 flex-wrap">
-                            {getUserRoles(user.id).map((role) => (
-                              <div
-                                key={role.id}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-ui-tag-blue-bg text-ui-tag-blue-text rounded border"
-                              >
-                                <span>{role.name}</span>
-                                <button
-                                  onClick={() => handleRemoveRoleClick(user, role)}
-                                  className="text-ui-tag-blue-text hover:text-ui-fg-error transition-colors ml-1"
-                                  title="Remover rol"
+                            {getUserRoles(user.id).map((role) => {
+                              // Nota: La verificación de permisos para remover roles se hace en el backend
+                              // El frontend muestra todos los roles, el backend determina si puede removerlos
+                              
+                              return (
+                                <div
+                                  key={role.id}
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-ui-tag-blue-bg text-ui-tag-blue-text rounded border"
                                 >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
+                                  <span>{role.name}</span>
+                                  <button
+                                    onClick={() => handleRemoveRoleClick(user, role)}
+                                    className="text-ui-tag-blue-text hover:text-ui-fg-error transition-colors ml-1"
+                                    title="Remover rol"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              )
+                            })}
                           </div>
                         ) : (
                           <span className="text-ui-fg-muted text-xs italic">Sin roles asignados</span>

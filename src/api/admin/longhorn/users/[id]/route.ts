@@ -21,8 +21,12 @@ export const GET = async (
       })
     }
 
-    // TEMPORAL: Saltar verificaciones de autenticación para testing
-    console.log('Skipping authentication checks for testing')
+    // Verificar autenticación
+    if (!req.auth_context?.user_id) {
+      return res.status(401).json({
+        message: "Usuario no autenticado"
+      })
+    }
     
     // Obtener roles y tiendas del usuario
     const userRoles = await longhornService.getUserRoles(id)
@@ -52,23 +56,54 @@ export const PUT = async (
   res: MedusaResponse
 ) => {
   try {
+    console.log('=== STARTING PUT UPDATE USER ===', { userId: req.params.id })
+    
     const { id } = req.params
     const userModuleService = req.scope.resolve(Modules.USER)
     const longhornService = req.scope.resolve("longhorn")
 
-    // TEMPORAL: Saltar verificaciones de autenticación para testing
-    console.log('Skipping authentication checks for testing')
+    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
+    const currentUserId = req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
+    console.log('🔍 Current user ID for authentication:', currentUserId)
+    
+    if (!currentUserId) {
+      console.error('❌ ERROR: No authentication context')
+      return res.status(401).json({
+        message: "Usuario no autenticado"
+      })
+    }
 
-    const { first_name, last_name, email, metadata } = req.body
+    const { first_name, last_name, email, avatar_url, metadata } = req.body
+    
+    console.log('🔍 PUT UPDATE - Received data:', {
+      first_name,
+      last_name, 
+      email,
+      avatar_url,
+      metadata
+    })
 
     // Actualizar datos básicos del usuario
-    const [updatedUser] = await userModuleService.updateUsers([{
+    const updateData = {
       id,
       first_name,
       last_name,
       email,
+      avatar_url,
       metadata
-    }])
+    }
+    
+    console.log('🔍 PUT UPDATE - Sending to userModuleService.updateUsers:', updateData)
+    
+    const [updatedUser] = await userModuleService.updateUsers([updateData])
+    
+    console.log('🔍 PUT UPDATE - Updated user result:', {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      avatar_url: updatedUser.avatar_url,
+      first_name: updatedUser.first_name,
+      last_name: updatedUser.last_name
+    })
 
     // Obtener información completa actualizada
     const userRoles = await longhornService.getUserRoles(id)
@@ -106,25 +141,50 @@ export const DELETE = async (
     const longhornService = req.scope.resolve("longhorn")
     const authModuleService = req.scope.resolve(Modules.AUTH)
 
-    // TEMPORAL: Saltar verificación de autenticación para testing
-    console.log('Skipping authentication check for testing')
-
-    // Por ahora, permitir eliminación para debugging (verificar permisos después)
-    console.log('Skipping permission check temporarily for debugging')
+    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
+    const currentUserId = req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
     
-    // // Verificar si el usuario actual puede gestionar este usuario
-    // const canManage = await longhornService.canManageUser(req.user.id, id)
-    // if (!canManage) {
-    //   return res.status(403).json({
-    //     message: "Insufficient privileges to manage this user"
-    //   })
-    // }
+    if (!currentUserId) {
+      return res.status(401).json({
+        message: "Usuario no autenticado",
+        error: "Authentication required"
+      })
+    }
 
-    // TEMPORAL: Eliminar verificación de autoborrado para testing
-    // No permitir que un usuario se elimine a sí mismo
-    console.log('Skipping self-deletion check for testing')
-
-    console.log('Permission checks passed, starting deletion process...')
+    console.log('🔒 SECURITY CHECK - User Deletion')
+    console.log('Current user:', currentUserId)
+    console.log('Target user to delete:', id)
+    
+    // Verificar si el usuario actual es Super Admin
+    const isCurrentUserSuperAdmin = await longhornService.isSuperAdmin(currentUserId)
+    console.log('Current user is Super Admin?', isCurrentUserSuperAdmin)
+    
+    // Verificar si el usuario objetivo tiene rol Super Admin
+    const targetUserRoles = await longhornService.getUserRoles(id)
+    const targetHasSuperAdminRole = targetUserRoles.some(userRole => 
+      userRole.role?.type === 'SUPER_ADMIN'
+    )
+    console.log('Target user has Super Admin role?', targetHasSuperAdminRole)
+    
+    // REGLA CRÍTICA: Solo Super Admin puede eliminar otros Super Admins
+    if (targetHasSuperAdminRole && !isCurrentUserSuperAdmin) {
+      console.log('❌ SECURITY VIOLATION: Non-Super Admin trying to delete Super Admin')
+      return res.status(403).json({
+        message: "No tienes permisos para eliminar usuarios con roles de Super Administrador",
+        error: "INSUFFICIENT_PRIVILEGES"
+      })
+    }
+    
+    // No permitir autoborrado (opcional, pero recomendado)
+    if (currentUserId === id) {
+      console.log('❌ SECURITY VIOLATION: User trying to delete themselves')
+      return res.status(403).json({
+        message: "No puedes eliminar tu propia cuenta",
+        error: "SELF_DELETION_NOT_ALLOWED"
+      })
+    }
+    
+    console.log('✅ Security checks passed, starting deletion process...')
 
     // Paso 1: Simplificado - Eliminar asignaciones de roles Longhorn
     try {

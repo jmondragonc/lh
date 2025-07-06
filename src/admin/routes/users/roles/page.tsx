@@ -86,28 +86,29 @@ const UserRolesManagement = () => {
 
   const fetchRoles = async () => {
     try {
-      console.log("🔧 FETCH DEBUG - Starting fetch roles")
-      const response = await fetch("/admin/longhorn/roles")
+      console.log("🔧 ROLES FETCH - Using real authentication")
+      
+      const response = await fetch(`/admin/longhorn/roles`)
       const data = await response.json()
       
-      console.log("🔧 FETCH DEBUG - Raw response:", data)
-      console.log("🔧 FETCH DEBUG - Roles array:", data.roles)
+      console.log("🔧 ROLES FETCH - Raw response:", data)
+      console.log("🔧 ROLES FETCH - Roles array:", data.roles)
       
       // Validación de roles
       const validRoles = (data.roles || []).filter(role => {
         const isValid = role && typeof role === 'object' && role.id
         if (!isValid) {
-          console.warn("🔧 FETCH DEBUG - Invalid role filtered:", role)
+          console.warn("🔧 ROLES FETCH - Invalid role filtered:", role)
         }
         return isValid
       })
       
-      console.log("🔧 FETCH DEBUG - Valid roles:", validRoles)
+      console.log("🔧 ROLES FETCH - Valid roles:", validRoles)
       
       setRoles(validRoles)
       setIsFiltered(data.filtered || false)
     } catch (error) {
-      console.error("🔧 FETCH DEBUG - Error fetching roles:", error)
+      console.error("🔧 ROLES FETCH - Error fetching roles:", error)
       showNotification("Error al cargar los roles", "error")
     } finally {
       setLoading(false)
@@ -124,29 +125,33 @@ const UserRolesManagement = () => {
       const url = editingRole ? `/admin/longhorn/roles/${editingRole.id}` : "/admin/longhorn/roles"
       const method = editingRole ? "PUT" : "POST"
       
-      console.log("🔧 EDIT DEBUG - Request:", { url, method, body: formData })
+      const requestBody = {
+        ...formData
+      }
+      
+      console.log("🔧 ROLES EDIT - Request:", { url, method, body: requestBody })
       
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(requestBody),
       })
 
       const responseData = await response.json()
-      console.log("🔧 EDIT DEBUG - Response:", { status: response.status, data: responseData })
+      console.log("🔧 ROLES EDIT - Response:", { status: response.status, data: responseData })
 
       if (response.ok) {
         await fetchRoles()
         resetForm()
         showNotification(editingRole ? "Rol actualizado exitosamente" : "Rol creado exitosamente", "success")
       } else {
-        console.error("🔧 EDIT DEBUG - Error Response:", responseData)
+        console.error("🔧 ROLES EDIT - Error Response:", responseData)
         showNotification(responseData.message || "Error al guardar el rol", "error")
       }
     } catch (error) {
-      console.error("🔧 EDIT DEBUG - Catch Error:", error)
+      console.error("🔧 ROLES EDIT - Catch Error:", error)
       showNotification("Error al guardar el rol", "error")
     }
   }
@@ -289,17 +294,25 @@ const UserRolesManagement = () => {
             </p>
           )}
         </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color rounded-md hover:bg-ui-button-neutral-hover transition-colors text-sm font-medium flex items-center space-x-2"
-        >
-          <Users className="w-4 h-4" />
-          <span>{showCreateForm ? "Cancelar" : "Crear Rol"}</span>
-        </button>
+        {/* Solo Super Admin puede crear roles */}
+        {!isFiltered ? (
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color rounded-md hover:bg-ui-button-neutral-hover transition-colors text-sm font-medium flex items-center space-x-2"
+          >
+            <Users className="w-4 h-4" />
+            <span>{showCreateForm ? "Cancelar" : "Crear Rol"}</span>
+          </button>
+        ) : (
+          <div className="px-4 py-2 bg-ui-bg-subtle text-ui-fg-muted text-sm rounded-md border border-ui-border-base flex items-center space-x-2">
+            <span>🔒</span>
+            <span>Solo Super Admin puede crear roles</span>
+          </div>
+        )}
       </div>
 
-      {/* Create/Edit Form */}
-      {showCreateForm && (
+      {/* Create/Edit Form - Solo visible para Super Admin */}
+      {showCreateForm && !isFiltered && (
         <div className="mb-8 p-6 border border-ui-border-base rounded-md bg-ui-bg-base shadow-card-rest">
           <h2 className="text-ui-fg-base text-lg font-medium mb-4 flex items-center space-x-2">
             <Users className="w-5 h-5" />
@@ -419,12 +432,19 @@ const UserRolesManagement = () => {
             <Users className="w-12 h-12 text-ui-fg-muted mx-auto mb-4" />
             <p className="text-ui-fg-muted text-lg mb-2">No hay roles definidos</p>
             <p className="text-ui-fg-subtle text-sm mb-4">Crea el primer rol para comenzar a gestionar permisos</p>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color rounded-md hover:bg-ui-button-neutral-hover transition-colors text-sm font-medium"
-            >
-              Crear Primer Rol
-            </button>
+            {!isFiltered ? (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color rounded-md hover:bg-ui-button-neutral-hover transition-colors text-sm font-medium"
+              >
+                Crear Primer Rol
+              </button>
+            ) : (
+              <div className="px-4 py-2 bg-ui-bg-subtle text-ui-fg-muted text-sm rounded-md border border-ui-border-base inline-flex items-center space-x-2">
+                <span>🔒</span>
+                <span>Solo Super Admin puede crear roles</span>
+              </div>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-ui-border-base">
@@ -484,33 +504,43 @@ const UserRolesManagement = () => {
                     </div>
                     
                     <div className="flex space-x-2 ml-4">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          console.log("🔧 EDIT BUTTON DEBUG - Clicked for role:", role)
-                          handleEdit(role)
-                        }}
-                        className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color text-sm rounded-md hover:bg-ui-button-neutral-hover transition-colors flex items-center space-x-1"
-                        title="Editar rol"
-                        type="button"
-                      >
-                        <span>✏️</span>
-                        <span>Editar</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleDeleteClick(role)
-                        }}
-                        className="px-4 py-2 bg-ui-button-danger text-ui-fg-on-color text-sm rounded-md hover:bg-ui-button-danger-hover transition-colors flex items-center space-x-1"
-                        title="Eliminar rol"
-                        type="button"
-                      >
-                        <span>🗑️</span>
-                        <span>Eliminar</span>
-                      </button>
+                      {/* Solo Super Admin puede editar y eliminar roles */}
+                      {!isFiltered ? (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              console.log("🔧 EDIT BUTTON DEBUG - Clicked for role:", role)
+                              handleEdit(role)
+                            }}
+                            className="px-4 py-2 bg-ui-button-neutral text-ui-fg-on-color text-sm rounded-md hover:bg-ui-button-neutral-hover transition-colors flex items-center space-x-1"
+                            title="Editar rol"
+                            type="button"
+                          >
+                            <span>✏️</span>
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleDeleteClick(role)
+                            }}
+                            className="px-4 py-2 bg-ui-button-danger text-ui-fg-on-color text-sm rounded-md hover:bg-ui-button-danger-hover transition-colors flex items-center space-x-1"
+                            title="Eliminar rol"
+                            type="button"
+                          >
+                            <span>🗑️</span>
+                            <span>Eliminar</span>
+                          </button>
+                        </>
+                      ) : (
+                        <div className="px-4 py-2 bg-ui-bg-subtle text-ui-fg-muted text-sm rounded-md border border-ui-border-base flex items-center space-x-1">
+                          <span>🔒</span>
+                          <span>Solo Super Admin puede gestionar roles</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

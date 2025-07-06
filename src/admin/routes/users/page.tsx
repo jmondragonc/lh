@@ -10,31 +10,54 @@ const UsuariosMainPage = () => {
     recentUsers: [] as any[]
   })
   const [loading, setLoading] = useState(true)
+  const [isNonSuperAdmin, setIsNonSuperAdmin] = useState(false)
 
   useEffect(() => {
+    checkUserLevel()
     fetchStats()
   }, [])
 
+  const checkUserLevel = () => {
+    // SIMULACIÓN TEMPORAL: Detectar si es usuario no-Super Admin
+    const simulateUser = new URLSearchParams(window.location.search).get('simulate_user')
+    const isNonSuper = simulateUser && !simulateUser.includes('super_admin')
+    setIsNonSuperAdmin(isNonSuper)
+  }
+
   const fetchStats = async () => {
     try {
+      // SIMULACIÓN TEMPORAL: Usar mismo parámetro para consistency
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'super_admin_user_id'
+      
       // Fetch users from Longhorn API
-      const usersResponse = await fetch("/admin/longhorn/users")
+      const usersResponse = await fetch(`/admin/longhorn/users?simulate_user=${simulateUser}`)
       const usersData = await usersResponse.json()
       const users = usersData.users || []
 
-      // Fetch roles from Longhorn API
-      const rolesResponse = await fetch("/admin/longhorn/roles")
+      // Fetch roles from Longhorn API  
+      const rolesResponse = await fetch(`/admin/longhorn/roles?simulate_user=${simulateUser}`)
       const rolesData = await rolesResponse.json()
       const roles = rolesData.roles || []
+
+      // Filtrar usuarios recientes sin Super Admins
+      const filteredRecentUsers = users
+        .filter((user: any) => {
+          if (!isNonSuperAdmin) return true // Super Admin ve todos
+          // Filtrar usuarios con rol Super Admin de recientes
+          const hasSuperAdminRole = user.longhorn_roles?.some((userRole: any) => 
+            userRole.role?.type === 'super_admin'
+          )
+          return !hasSuperAdminRole
+        })
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5)
 
       // Calculate stats
       setStats({
         totalUsers: users.length,
         totalRoles: roles.length,
         activeUsers: users.filter(u => u.is_active !== false).length,
-        recentUsers: users
-          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          .slice(0, 5)
+        recentUsers: filteredRecentUsers
       })
     } catch (error) {
       console.error("Error fetching stats:", error)
@@ -192,7 +215,8 @@ const UsuariosMainPage = () => {
       <div className="bg-ui-bg-base rounded-md border border-ui-border-base shadow-card-rest p-6">
         <h3 className="text-ui-fg-base text-lg font-medium mb-4">Sistema de Roles Longhorn</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-ui-bg-subtle rounded-md">
+          {/* Super Administrador - Ocultar para usuarios no-Super Admin */}
+          <div className={`p-4 bg-ui-bg-subtle rounded-md ${isNonSuperAdmin ? 'hidden' : ''}`}>
             <div className="flex items-center space-x-2 mb-2">
               <span className="w-3 h-3 bg-red-500 rounded-full"></span>
               <h4 className="text-ui-fg-base font-medium">Super Administrador</h4>
