@@ -86,34 +86,29 @@ const UserRolesManagement = () => {
 
   const fetchRoles = async () => {
     try {
-      console.log("🔧 FETCH DEBUG - Starting fetch roles")
+      console.log("🔧 ROLES FETCH - Using real authentication")
       
-      // SIMULACIÓN TEMPORAL: Diferentes tipos de usuarios para testing
-      // En producción esto se manejará automáticamente por el middleware de autenticación
-      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
-      console.log("🔧 SIMULATE DEBUG - Using simulated user:", simulateUser)
-      
-      const response = await fetch(`/admin/longhorn/roles?simulate_user=${simulateUser}`)
+      const response = await fetch(`/admin/longhorn/roles`)
       const data = await response.json()
       
-      console.log("🔧 FETCH DEBUG - Raw response:", data)
-      console.log("🔧 FETCH DEBUG - Roles array:", data.roles)
+      console.log("🔧 ROLES FETCH - Raw response:", data)
+      console.log("🔧 ROLES FETCH - Roles array:", data.roles)
       
       // Validación de roles
       const validRoles = (data.roles || []).filter(role => {
         const isValid = role && typeof role === 'object' && role.id
         if (!isValid) {
-          console.warn("🔧 FETCH DEBUG - Invalid role filtered:", role)
+          console.warn("🔧 ROLES FETCH - Invalid role filtered:", role)
         }
         return isValid
       })
       
-      console.log("🔧 FETCH DEBUG - Valid roles:", validRoles)
+      console.log("🔧 ROLES FETCH - Valid roles:", validRoles)
       
       setRoles(validRoles)
       setIsFiltered(data.filtered || false)
     } catch (error) {
-      console.error("🔧 FETCH DEBUG - Error fetching roles:", error)
+      console.error("🔧 ROLES FETCH - Error fetching roles:", error)
       showNotification("Error al cargar los roles", "error")
     } finally {
       setLoading(false)
@@ -130,14 +125,11 @@ const UserRolesManagement = () => {
       const url = editingRole ? `/admin/longhorn/roles/${editingRole.id}` : "/admin/longhorn/roles"
       const method = editingRole ? "PUT" : "POST"
       
-      // SIMULACIÓN TEMPORAL: Añadir simulate_user al body
-      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
       const requestBody = {
-        ...formData,
-        simulate_user: simulateUser
+        ...formData
       }
       
-      console.log("🔧 EDIT DEBUG - Request:", { url, method, body: requestBody })
+      console.log("🔧 ROLES EDIT - Request:", { url, method, body: requestBody })
       
       const response = await fetch(url, {
         method,
@@ -148,18 +140,18 @@ const UserRolesManagement = () => {
       })
 
       const responseData = await response.json()
-      console.log("🔧 EDIT DEBUG - Response:", { status: response.status, data: responseData })
+      console.log("🔧 ROLES EDIT - Response:", { status: response.status, data: responseData })
 
       if (response.ok) {
         await fetchRoles()
         resetForm()
         showNotification(editingRole ? "Rol actualizado exitosamente" : "Rol creado exitosamente", "success")
       } else {
-        console.error("🔧 EDIT DEBUG - Error Response:", responseData)
+        console.error("🔧 ROLES EDIT - Error Response:", responseData)
         showNotification(responseData.message || "Error al guardar el rol", "error")
       }
     } catch (error) {
-      console.error("🔧 EDIT DEBUG - Catch Error:", error)
+      console.error("🔧 ROLES EDIT - Catch Error:", error)
       showNotification("Error al guardar el rol", "error")
     }
   }
@@ -173,10 +165,7 @@ const UserRolesManagement = () => {
     if (!roleToDelete) return
 
     try {
-      // SIMULACIÓN TEMPORAL: Añadir simulate_user al query
-      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
-      
-      const response = await fetch(`/admin/longhorn/roles/${roleToDelete.id}?simulate_user=${simulateUser}`, {
+      const response = await fetch(`/admin/longhorn/roles/${roleToDelete.id}`, {
         method: "DELETE",
       })
 

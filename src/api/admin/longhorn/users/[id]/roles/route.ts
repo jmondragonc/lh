@@ -71,14 +71,14 @@ export const POST = async (
   try {
     const { id: user_id } = req.params
     const longhornService = req.scope.resolve("longhorn")
-    const { simulate_user } = req.query
 
-    // SEGURIDAD CRÍTICA: Verificar permisos del usuario actual
-    const currentUserId = simulate_user as string || req.auth_context?.user_id
+    // OBTENER USUARIO ACTUAL AUTENTICADO
+    const currentUserId = req.auth_context?.user_id
     
     if (!currentUserId) {
       return res.status(401).json({
-        message: "Authentication required"
+        message: "Usuario no autenticado",
+        error: "Authentication required"
       })
     }
 
@@ -202,14 +202,14 @@ export const DELETE = async (
   try {
     const { id: user_id } = req.params
     const longhornService = req.scope.resolve("longhorn")
-    const { simulate_user } = req.query
 
-    // SEGURIDAD CRÍTICA: Verificar permisos del usuario actual
-    const currentUserId = simulate_user as string || req.auth_context?.user_id
+    // OBTENER USUARIO ACTUAL AUTENTICADO
+    const currentUserId = req.auth_context?.user_id
     
     if (!currentUserId) {
       return res.status(401).json({
-        message: "Authentication required"
+        message: "Usuario no autenticado",
+        error: "Authentication required"
       })
     }
 

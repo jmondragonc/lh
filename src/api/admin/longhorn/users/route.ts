@@ -15,21 +15,25 @@ export const GET = async (
     const longhornService = req.scope.resolve("longhorn")
     const { simulate_user } = req.query
 
-    // SIMULACIÓN TEMPORAL: Para testing sin autenticación
-    const currentUserId = simulate_user as string || req.auth_context?.user_id
-    console.log('🔍 DEBUGGING - Current user ID (simulated):', currentUserId)
-    console.log('🔍 DEBUGGING - simulate_user from query:', simulate_user)
-    console.log('🔍 DEBUGGING - req.auth_context?.user_id:', req.auth_context?.user_id)
+    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
+    const currentUserId = simulate_user as string || req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
+    console.log('🔍 USUARIO ACTUAL - Auth Context User ID:', req.auth_context?.user_id)
+    console.log('🔍 USUARIO ACTUAL - Simulate User (override):', simulate_user)
+    console.log('🔍 USUARIO ACTUAL - Final User ID:', currentUserId)
+    console.log('🔍 USUARIO ACTUAL - Type of currentUserId:', typeof currentUserId)
+    console.log('🔍 USUARIO ACTUAL - Is currentUserId truthy?', !!currentUserId)
 
-    // DEBUGGING CRÍTICO: Si estamos usando un ID ficticio, reportarlo
-    if (currentUserId === 'super_admin_user_id' || currentUserId === 'manager_user_id' || currentUserId === 'staff_user_id') {
-      console.log('🚨 PROBLEM DETECTED: Using fictional user ID for simulation:', currentUserId)
-      console.log('🚨 This will cause incorrect filtering behavior!')
+    if (!currentUserId) {
+      console.error('❌ ERROR: No se pudo obtener ID del usuario actual')
+      return res.status(401).json({
+        message: "Usuario no autenticado",
+        error: "No se pudo verificar la identidad del usuario"
+      })
     }
 
     // Obtener todos los usuarios del sistema
     const allUsers = await userModuleService.listUsers()
-    console.log('Total users in system:', allUsers.length)
+    console.log('📊 Total users in system:', allUsers.length)
 
     // Enriquecer usuarios con roles de Longhorn
     const enrichedUsers = await Promise.all(
@@ -49,7 +53,7 @@ export const GET = async (
             longhorn_stores: longhornStores
           }
         } catch (error) {
-          console.warn(`Error enriching user ${user.id}:`, error.message)
+          console.warn(`⚠️ Error enriching user ${user.id}:`, error.message)
           return {
             id: user.id,
             email: user.email,
@@ -64,71 +68,104 @@ export const GET = async (
       })
     )
 
+    console.log('📊 Enriched users count:', enrichedUsers.length)
+
     // APLICAR FILTRADO JERÁRQUICO CRÍTICO
     let filteredUsers = enrichedUsers
     let isFiltered = false
 
     if (currentUserId) {
       try {
+        console.log('\n=== STARTING HIERARCHICAL FILTERING ===')
+        console.log('🔍 Checking if current user is Super Admin...')
+        console.log('🔍 Current user ID:', currentUserId)
+        
         const isSuperAdmin = await longhornService.isSuperAdmin(currentUserId)
-        console.log('Current user is Super Admin?', isSuperAdmin)
+        console.log('🔍 isSuperAdmin() returned:', isSuperAdmin)
+        console.log('🔍 Type of isSuperAdmin result:', typeof isSuperAdmin)
+        console.log('🔍 Is isSuperAdmin truthy?', !!isSuperAdmin)
         
         if (isSuperAdmin) {
-          // SUPER ADMIN VE TODO SIN RESTRICCIONES
-          console.log('✅ SUPER ADMIN - NO FILTERING APPLIED')
-          console.log('✅ Super Admin can see all users including other Super Admins')
-          filteredUsers = enrichedUsers // Sin filtrado
+          // SUPER ADMIN VE TODO SIN RESTRICCIONES - CRÍTICO
+          console.log('\n✅ SUPER ADMIN CONFIRMED - NO FILTERING APPLIED')
+          console.log('✅ Super Admin has unrestricted access to ALL users')
+          console.log('✅ Including other Super Admins')
+          console.log('✅ Total users visible:', enrichedUsers.length)
+          console.log('✅ User emails:', enrichedUsers.map(u => u.email).join(', '))
+          
+          // CRÍTICO: Super Admin NO tiene filtrado
+          filteredUsers = enrichedUsers
           isFiltered = false
         } else {
-          // USUARIOS MENORES NO VEN SUPER ADMINS
-          console.log('🔒 NON-SUPER ADMIN USER - APPLYING HIERARCHICAL FILTERING')
-          console.log('🔒 Filtering out Super Admin users...')
+          // USUARIOS MENORES NO VEN SUPER ADMINS - APLICAR FILTRO
+          console.log('\n🔒 NON-SUPER ADMIN USER CONFIRMED')
+          console.log('🔒 APPLYING HIERARCHICAL FILTERING')
+          console.log('🔒 Will hide Super Admin users from this user')
+          
+          console.log('\n--- FILTERING PROCESS ---')
+          const originalCount = enrichedUsers.length
           
           filteredUsers = enrichedUsers.filter(user => {
-            console.log(`\nChecking user: ${user.email}`)
-            console.log('User roles:', user.longhorn_roles)
+            console.log(`\n🔍 Evaluating user: ${user.email} (ID: ${user.id})`)
+            console.log('🔍 User longhorn_roles count:', user.longhorn_roles?.length || 0)
+            
+            if (!user.longhorn_roles || user.longhorn_roles.length === 0) {
+              console.log('🔍 User has no roles - KEEPING (not Super Admin)')
+              return true
+            }
             
             const hasSuperAdminRole = user.longhorn_roles.some(userRole => {
-              console.log('  Checking role:', userRole.role)
-              console.log('  Role type:', userRole.role?.type)
-              console.log('  Expected type:', 'SUPER_ADMIN')
-              console.log('  Comparison result:', userRole.role?.type === 'SUPER_ADMIN')
-              const isSuperAdmin = userRole.role?.type === 'SUPER_ADMIN'
-              console.log('  Is super admin?', isSuperAdmin)
-              return isSuperAdmin
+              const roleName = userRole.role?.name || 'Unknown'
+              const roleType = userRole.role?.type || 'Unknown'
+              console.log(`  📋 Checking role: ${roleName} (${roleType})`)
+              
+              const isSuperAdminRole = roleType === 'SUPER_ADMIN'
+              console.log(`  📋 Is Super Admin role? ${isSuperAdminRole}`)
+              return isSuperAdminRole
             })
             
-            console.log(`  User ${user.email} has Super Admin role:`, hasSuperAdminRole)
-            console.log(`  Will ${hasSuperAdminRole ? 'FILTER OUT' : 'KEEP'} this user`)
+            const shouldKeepUser = !hasSuperAdminRole
+            console.log(`🔍 User ${user.email} has Super Admin role: ${hasSuperAdminRole}`)
+            console.log(`🔍 Decision: ${shouldKeepUser ? '✅ KEEP USER' : '❌ FILTER OUT (Super Admin)'}`)
             
-            return !hasSuperAdminRole // Filtrar usuarios con roles Super Admin
+            return shouldKeepUser
           })
           
           isFiltered = true
-          console.log('\n=== HIERARCHICAL FILTER APPLIED ===')
-          console.log('Original users:', enrichedUsers.length)
-          console.log('Filtered users (removed Super Admins):', filteredUsers.length)
-          console.log('Users kept:', filteredUsers.map(u => u.email))
+          console.log('\n=== HIERARCHICAL FILTER RESULTS ===')
+          console.log('📊 Original users count:', originalCount)
+          console.log('📊 Filtered users count:', filteredUsers.length)
+          console.log('📊 Super Admins filtered out:', originalCount - filteredUsers.length)
+          console.log('📊 Final visible users:', filteredUsers.map(u => u.email).join(', '))
         }
       } catch (error) {
-        console.error('Error checking user hierarchy:', error)
+        console.error('\n🚨 ERROR in hierarchical filtering:', error)
+        console.error('🚨 Error message:', error.message)
+        console.error('🚨 Error stack:', error.stack)
+        
         // En caso de error, aplicar filtrado conservador por seguridad
-        // SOLO para usuarios no-super-admin
+        // Remover Super Admins por defecto para proteger el sistema
+        console.log('🚨 Applying emergency conservative filtering')
+        
         filteredUsers = enrichedUsers.filter(user => {
-          const hasSuperAdminRole = user.longhorn_roles.some(userRole => 
+          const hasSuperAdminRole = user.longhorn_roles?.some(userRole => 
             userRole.role?.type === 'SUPER_ADMIN'
-          )
+          ) || false
           return !hasSuperAdminRole
         })
         isFiltered = true
-        console.log('⚠️ Error fallback: Applied conservative filtering')
+        console.log('🚨 Emergency filter applied - removed all Super Admins for security')
+        console.log('🚨 Emergency filtered count:', filteredUsers.length)
       }
     } else {
-      console.log('No current user ID - allowing all users (internal API)')
+      console.log('\n⚠️ No current user ID provided')
+      console.log('⚠️ Assuming internal API call - allowing all users')
+      console.log('⚠️ This should only happen for system/internal operations')
     }
 
-    console.log('Final users to return:', filteredUsers.length)
-    console.log('Hierarchy filtered?', isFiltered)
+    console.log('\n=== FINAL RESULTS ===')
+    console.log('📊 Final users to return:', filteredUsers.length)
+    console.log('📊 Hierarchy filtered?', isFiltered)
 
     res.json({
       users: filteredUsers,

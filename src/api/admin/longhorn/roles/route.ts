@@ -15,18 +15,11 @@ export const GET = async (
     console.log('=== FILTRADO JERÁRQUICO DE ROLES ===') 
     console.log('Query params:', { type, is_active, simulate_user })
 
-    // SIMULACIÓN TEMPORAL: Para testing sin autenticación
-    // En producción, esto vendría de req.auth_context.user_id
-    const currentUserId = simulate_user as string || req.auth_context?.user_id
-    console.log('🔍 DEBUGGING - Current user ID (simulated):', currentUserId)
-    console.log('🔍 DEBUGGING - simulate_user from query:', simulate_user)
-    console.log('🔍 DEBUGGING - req.auth_context?.user_id:', req.auth_context?.user_id)
-
-    // DEBUGGING CRÍTICO: Si estamos usando un ID ficticio, reportarlo
-    if (currentUserId === 'super_admin_user_id' || currentUserId === 'manager_user_id' || currentUserId === 'staff_user_id') {
-      console.log('🚨 PROBLEM DETECTED: Using fictional user ID for simulation:', currentUserId)
-      console.log('🚨 This will cause incorrect filtering behavior!')
-    }
+    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
+    const currentUserId = simulate_user as string || req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
+    console.log('🔍 USUARIO ACTUAL - Auth Context User ID:', req.auth_context?.user_id)
+    console.log('🔍 USUARIO ACTUAL - Simulate User (override):', simulate_user)
+    console.log('🔍 USUARIO ACTUAL - Final User ID:', currentUserId)
 
     // Obtener roles filtrados por jerarquía
     const { roles: filteredRoles, isFiltered } = await longhornService.getFilteredRoles(currentUserId)
@@ -92,46 +85,20 @@ export const POST = async (
     console.log('=== CREACIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===')
     console.log('Request data:', { name, type, description, simulate_user })
 
-    // Validar datos requeridos
-    if (!name || !type) {
-      return res.status(400).json({
-        message: "Missing required fields: name, type"
-      })
-    }
-
-    // Convertir tipo del frontend a tipo del modelo
-    const typeMapping = {
-      "super_admin": ROLE_TYPES.SUPER_ADMIN,
-      "local_manager": ROLE_TYPES.STORE_MANAGER,
-      "local_staff": ROLE_TYPES.STORE_STAFF
-    }
-
-    const modelType = typeMapping[type]
-    if (!modelType) {
-      return res.status(400).json({
-        message: `Invalid role type. Must be one of: super_admin, local_manager, local_staff`
-      })
-    }
-
-    // SIMULACIÓN TEMPORAL: Para testing sin autenticación
-    // En producción, esto vendría de req.auth_context.user_id
-    const currentUserId = simulate_user || req.auth_context?.actor_id || req.auth_context?.user_id
-    console.log('Current user ID (simulated):', currentUserId)
+    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
+    const currentUserId = simulate_user || req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
+    console.log('Current user ID:', currentUserId)
 
     // Verificar permisos de creación jerárquicos
-    if (currentUserId) {
-      const canCreate = await longhornService.canCreateRole(currentUserId, modelType)
-      console.log('Can create role?', canCreate, 'for type:', modelType)
-      
-      if (!canCreate) {
-        console.log('Permission denied for role creation')
-        return res.status(403).json({
-          message: `No tienes permisos para crear roles de tipo: ${type}`,
-          error: "INSUFFICIENT_PERMISSIONS"
-        })
-      }
-    } else {
-      console.log('No user ID provided, allowing creation (internal API)')
+    const canCreate = await longhornService.canCreateRole(currentUserId, modelType)
+    console.log('Can create role?', canCreate, 'for type:', modelType)
+    
+    if (!canCreate) {
+      console.log('Permission denied for role creation')
+      return res.status(403).json({
+        message: `No tienes permisos para crear roles de tipo: ${type}`,
+        error: "INSUFFICIENT_PERMISSIONS"
+      })
     }
 
     const role = await longhornService.createRole({

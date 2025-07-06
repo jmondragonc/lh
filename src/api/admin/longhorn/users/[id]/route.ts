@@ -1,11 +1,11 @@
 import { 
-  MedusaRequest, 
+  AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
 import { Modules } from "@medusajs/framework/utils"
 
 export const GET = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -21,8 +21,12 @@ export const GET = async (
       })
     }
 
-    // TEMPORAL: Saltar verificaciones de autenticación para testing
-    console.log('Skipping authentication checks for testing')
+    // Verificar autenticación
+    if (!req.auth_context?.user_id) {
+      return res.status(401).json({
+        message: "Usuario no autenticado"
+      })
+    }
     
     // Obtener roles y tiendas del usuario
     const userRoles = await longhornService.getUserRoles(id)
@@ -48,7 +52,7 @@ export const GET = async (
 }
 
 export const PUT = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -56,8 +60,12 @@ export const PUT = async (
     const userModuleService = req.scope.resolve(Modules.USER)
     const longhornService = req.scope.resolve("longhorn")
 
-    // TEMPORAL: Saltar verificaciones de autenticación para testing
-    console.log('Skipping authentication checks for testing')
+    // Verificar autenticación
+    if (!req.auth_context?.user_id) {
+      return res.status(401).json({
+        message: "Usuario no autenticado"
+      })
+    }
 
     const { first_name, last_name, email, metadata } = req.body
 
@@ -95,7 +103,7 @@ export const PUT = async (
 }
 
 export const DELETE = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -105,14 +113,14 @@ export const DELETE = async (
     const userModuleService = req.scope.resolve(Modules.USER)
     const longhornService = req.scope.resolve("longhorn")
     const authModuleService = req.scope.resolve(Modules.AUTH)
-    const { simulate_user } = req.query
 
-    // SEGURIDAD CRÍTICA: Verificar permisos del usuario actual
-    const currentUserId = simulate_user as string || req.auth_context?.user_id
+    // OBTENER USUARIO ACTUAL AUTENTICADO
+    const currentUserId = req.auth_context?.user_id
     
     if (!currentUserId) {
       return res.status(401).json({
-        message: "Authentication required"
+        message: "Usuario no autenticado",
+        error: "Authentication required"
       })
     }
 

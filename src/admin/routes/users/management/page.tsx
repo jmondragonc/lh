@@ -139,16 +139,14 @@ const UsersManagement = () => {
 
   const fetchUsers = async (): Promise<User[]> => {
     try {
-      // SIMULACIÓN TEMPORAL: Usar mismo parámetro que roles para consistency
-      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
-      console.log('🔍 USER FETCH DEBUG - Using simulated user:', simulateUser)
+      console.log('🔍 USER FETCH - Using real authentication')
       
-      const response = await makeAuthenticatedRequest(`/admin/longhorn/users?simulate_user=${simulateUser}`)
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users`)
       const data = await response.json()
       const usersData = (data.users as User[]) || []
       setUsers(usersData)
       setIsFiltered(data.filtered || false)
-      console.log('🔍 USER FETCH DEBUG - Users loaded:', usersData.length, 'filtered:', data.filtered)
+      console.log('🔍 USER FETCH - Users loaded:', usersData.length, 'filtered:', data.filtered)
       return usersData
     } catch (error) {
       console.error("Error fetching users:", error)
@@ -159,10 +157,9 @@ const UsersManagement = () => {
 
   const fetchRoles = async (): Promise<Role[]> => {
     try {
-      // SIMULACIÓN TEMPORAL: Usar mismo parámetro para consistency
-      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
+      console.log('🔍 ROLES FETCH - Using real authentication')
       
-      const response = await makeAuthenticatedRequest(`/admin/longhorn/roles?simulate_user=${simulateUser}`)
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/roles`)
       const data = await response.json()
       const rolesData = (data.roles as Role[]) || []
       setRoles(rolesData)
@@ -292,10 +289,7 @@ const UsersManagement = () => {
     if (!userToDelete) return
 
     try {
-      // AGREGADO: Pasar parámetro simulate_user para validaciones de seguridad
-      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
-      
-      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${userToDelete.id}?simulate_user=${simulateUser}`, {
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${userToDelete.id}`, {
         method: "DELETE",
       })
 
@@ -362,10 +356,7 @@ const UsersManagement = () => {
     if (!roleAssignmentData) return
 
     try {
-      // AGREGADO: Pasar parámetro simulate_user para validaciones de seguridad
-      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
-      
-      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleAssignmentData.user.id}/roles?simulate_user=${simulateUser}`, {
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleAssignmentData.user.id}/roles`, {
         method: "POST",
         body: JSON.stringify({ role_id: roleAssignmentData.role.id }),
       })
@@ -414,10 +405,7 @@ const UsersManagement = () => {
     if (!roleRemovalData) return
 
     try {
-      // AGREGADO: Pasar parámetro simulate_user para validaciones de seguridad
-      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW' // Default to manager ID
-      
-      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleRemovalData.user.id}/roles?simulate_user=${simulateUser}`, {
+      const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleRemovalData.user.id}/roles`, {
         method: "DELETE",
         body: JSON.stringify({ 
           role_id: roleRemovalData.role.id 
@@ -640,12 +628,8 @@ const UsersManagement = () => {
                         {getUserRoles(user.id).length > 0 ? (
                           <div className="flex gap-1 mt-1 flex-wrap">
                             {getUserRoles(user.id).map((role) => {
-                              // Determinar si este usuario puede remover este rol específico
-                              const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
-                              const isCurrentUser = user.id === simulateUser
-                              const isRemovingOwnManagerRole = isCurrentUser && role.type === 'STORE_MANAGER'
-                              const isRemovingOwnSuperAdminRole = isCurrentUser && role.type === 'SUPER_ADMIN'
-                              const canRemoveRole = !isRemovingOwnManagerRole && !isRemovingOwnSuperAdminRole
+                              // Nota: La verificación de permisos para remover roles se hace en el backend
+                              // El frontend muestra todos los roles, el backend determina si puede removerlos
                               
                               return (
                                 <div
@@ -653,22 +637,13 @@ const UsersManagement = () => {
                                   className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-ui-tag-blue-bg text-ui-tag-blue-text rounded border"
                                 >
                                   <span>{role.name}</span>
-                                  {canRemoveRole ? (
-                                    <button
-                                      onClick={() => handleRemoveRoleClick(user, role)}
-                                      className="text-ui-tag-blue-text hover:text-ui-fg-error transition-colors ml-1"
-                                      title="Remover rol"
-                                    >
-                                      ×
-                                    </button>
-                                  ) : (
-                                    <span 
-                                      className="text-ui-fg-muted ml-1 cursor-not-allowed"
-                                      title="No puedes remover tu propio rol de administración"
-                                    >
-                                      🔒
-                                    </span>
-                                  )}
+                                  <button
+                                    onClick={() => handleRemoveRoleClick(user, role)}
+                                    className="text-ui-tag-blue-text hover:text-ui-fg-error transition-colors ml-1"
+                                    title="Remover rol"
+                                  >
+                                    ×
+                                  </button>
                                 </div>
                               )
                             })}

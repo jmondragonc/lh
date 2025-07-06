@@ -164,6 +164,8 @@ class LonghornModuleService extends MedusaService({
   }
 
   async getUserRoles(user_id: string, store_id?: string) {
+    console.log('🔍 getUserRoles called with user_id:', user_id, 'store_id:', store_id)
+    
     const filters: any = {
       user_id,
       is_active: true,
@@ -176,12 +178,20 @@ class LonghornModuleService extends MedusaService({
 
     // Obtener user roles
     const userRoles = await this.listLonghornUserRoles(filters)
+    console.log('🔍 Found', userRoles.length, 'user roles for user', user_id)
     
     // Hacer JOIN manual con roles
     const enrichedUserRoles = await Promise.all(
       userRoles.map(async (userRole) => {
+        console.log('🔍 Enriching userRole with role_id:', userRole.role_id)
         const roles = await this.listLonghornRoles({ id: userRole.role_id })
         const role = roles[0] || null
+        
+        if (role) {
+          console.log('🔍 Found role for enrichment:', { name: role.name, type: role.type })
+        } else {
+          console.log('⚠️ No role found for role_id:', userRole.role_id)
+        }
         
         return {
           ...userRole,
@@ -190,6 +200,7 @@ class LonghornModuleService extends MedusaService({
       })
     )
 
+    console.log('🔍 Returning', enrichedUserRoles.length, 'enriched user roles')
     return enrichedUserRoles
   }
 
@@ -476,42 +487,86 @@ class LonghornModuleService extends MedusaService({
   }
 
   async isSuperAdmin(user_id: string): Promise<boolean> {
-    console.log('🔍 isSuperAdmin called with user_id:', user_id)
+    console.log('\n🔍 === isSuperAdmin CHECK ===')
+    console.log('🔍 Checking user_id:', user_id)
+    console.log('🔍 Expected SUPER_ADMIN type value:', ROLE_TYPES.SUPER_ADMIN)
     
-    // Detectar IDs ficticios
+    // Detectar IDs ficticios para simulación
     if (user_id === 'super_admin_user_id' || user_id === 'manager_user_id' || user_id === 'staff_user_id') {
-      console.log('🚨 WARNING: isSuperAdmin called with fictional ID:', user_id)
-      console.log('🚨 This should be a real UUID, not a fictional string!')
+      console.log('🎭 SIMULATION MODE: Using fictional ID for testing')
+      console.log('🎭 Fictional ID:', user_id)
       
       // Por convención, solo 'super_admin_user_id' es Super Admin para testing
       const result = user_id === 'super_admin_user_id'
-      console.log('🔄 Returning fictional result for testing:', result)
+      console.log('🎭 Simulation result for', user_id, ':', result ? 'IS Super Admin' : 'NOT Super Admin')
       return result
     }
     
-    const userRoles = await this.listLonghornUserRoles({
-      user_id,
-      is_active: true,
-      deleted_at: null
-    })
-    
-    console.log('🔍 Found user roles for', user_id, ':', userRoles.length)
-    
-    // Verificar cada rol manualmente
-    for (const userRole of userRoles) {
-      const roles = await this.listLonghornRoles({ id: userRole.role_id })
-      const role = roles[0]
+    try {
+      // Buscar roles del usuario real
+      const userRoles = await this.listLonghornUserRoles({
+        user_id,
+        is_active: true,
+        deleted_at: null
+      })
       
-      console.log('🔍 Checking role:', role?.name, 'type:', role?.type)
+      console.log('🔍 Found user roles for', user_id, ':', userRoles.length)
+      console.log('🔍 User roles details:', userRoles.map(ur => ({ 
+        role_id: ur.role_id, 
+        is_active: ur.is_active,
+        user_id: ur.user_id
+      })))
       
-      if (role?.type === ROLE_TYPES.SUPER_ADMIN) {
-        console.log('✅ User', user_id, 'IS Super Admin - found role type:', role.type)
-        return true
+      if (userRoles.length === 0) {
+        console.log('❌ No roles found for user', user_id)
+        return false
       }
+      
+      // Verificar cada rol manualmente
+      for (const userRole of userRoles) {
+        console.log('\n🔍 Checking user role ID:', userRole.role_id)
+        
+        const roles = await this.listLonghornRoles({ id: userRole.role_id })
+        console.log('🔍 Found roles for ID', userRole.role_id, ':', roles.length)
+        
+        if (roles.length === 0) {
+          console.log('⚠️ No role found for ID:', userRole.role_id)
+          continue
+        }
+        
+        const role = roles[0]
+        
+        console.log('🔍 Found role details:')
+        console.log('  - ID:', role.id)
+        console.log('  - Name:', role.name)
+        console.log('  - Type:', role.type)
+        console.log('  - Expected SUPER_ADMIN:', ROLE_TYPES.SUPER_ADMIN)
+        console.log('  - Types match?', role.type === ROLE_TYPES.SUPER_ADMIN)
+        console.log('  - String comparison:', `"${role.type}" === "${ROLE_TYPES.SUPER_ADMIN}"`)
+        
+        if (role.type === ROLE_TYPES.SUPER_ADMIN) {
+          console.log('✅ SUPER ADMIN ROLE CONFIRMED!')
+          console.log('✅ User', user_id, 'IS Super Admin')
+          console.log('✅ Role details:', { name: role.name, type: role.type })
+          return true
+        } else {
+          console.log('❌ Role type does not match SUPER_ADMIN')
+          console.log('❌ This role type:', `"${role.type}"`)
+          console.log('❌ Expected type:', `"${ROLE_TYPES.SUPER_ADMIN}"`)
+        }
+      }
+      
+      console.log('\n❌ FINAL RESULT: User', user_id, 'is NOT Super Admin')
+      console.log('❌ None of their roles have SUPER_ADMIN type')
+      return false
+      
+    } catch (error) {
+      console.error('🚨 ERROR in isSuperAdmin check:', error)
+      console.error('🚨 Error details:', error.message)
+      console.error('🚨 Stack trace:', error.stack)
+      console.error('🚨 Defaulting to NOT Super Admin for security')
+      return false
     }
-    
-    console.log('❌ User', user_id, 'is NOT Super Admin')
-    return false
   }
 
   async isStoreManager(user_id: string, store_id: string): Promise<boolean> {

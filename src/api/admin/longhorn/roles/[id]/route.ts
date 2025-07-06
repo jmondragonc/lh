@@ -1,16 +1,23 @@
 import { 
-  MedusaRequest, 
+  AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
 import { ROLE_TYPES } from "../../../../../modules/longhorn/models/role"
 
 export const GET = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
     const longhornService = req.scope.resolve("longhorn")
     const { id } = req.params
+
+    // Verificar autenticación
+    if (!req.auth_context?.user_id) {
+      return res.status(401).json({
+        message: "Usuario no autenticado"
+      })
+    }
 
     const roles = await longhornService.listLonghornRoles({ 
       id, 
@@ -49,16 +56,26 @@ export const GET = async (
 }
 
 export const PUT = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
     const longhornService = req.scope.resolve("longhorn")
     const { id } = req.params
-    const { name, type, description, permissions, is_active, simulate_user } = req.body
+    const { name, type, description, permissions, is_active } = req.body
 
     console.log("=== EDICIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===")
-    console.log("Request:", { id, name, type, description, simulate_user })
+    console.log("Request:", { id, name, type, description })
+
+    // OBTENER USUARIO ACTUAL AUTENTICADO
+    const currentUserId = req.auth_context?.user_id
+    
+    if (!currentUserId) {
+      return res.status(401).json({
+        message: "Usuario no autenticado",
+        error: "Authentication required"
+      })
+    }
 
     // Verificar que el rol existe
     const existingRoles = await longhornService.listLonghornRoles({ 
@@ -75,9 +92,7 @@ export const PUT = async (
     const existingRole = existingRoles[0]
     console.log("Existing role type:", existingRole.type)
     
-    // SIMULACIÓN TEMPORAL: Para testing sin autenticación
-    const currentUserId = simulate_user || req.auth_context?.actor_id || req.auth_context?.user_id
-    console.log("Current user ID (simulated):", currentUserId)
+    console.log("Current user ID:", currentUserId)
 
     // Verificar permisos jerárquicos para edición
     if (currentUserId) {
@@ -183,16 +198,25 @@ export const PUT = async (
 }
 
 export const DELETE = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
     const longhornService = req.scope.resolve("longhorn")
     const { id } = req.params
-    const { simulate_user } = req.query
 
     console.log("=== ELIMINACIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===")
-    console.log("Request:", { id, simulate_user })
+    console.log("Request:", { id })
+
+    // OBTENER USUARIO ACTUAL AUTENTICADO
+    const currentUserId = req.auth_context?.user_id
+    
+    if (!currentUserId) {
+      return res.status(401).json({
+        message: "Usuario no autenticado",
+        error: "Authentication required"
+      })
+    }
 
     // Verificar que el rol existe
     const existingRoles = await longhornService.listLonghornRoles({ 
@@ -209,9 +233,7 @@ export const DELETE = async (
     const existingRole = existingRoles[0]
     console.log("Role to delete type:", existingRole.type)
     
-    // SIMULACIÓN TEMPORAL: Para testing sin autenticación
-    const currentUserId = simulate_user as string || req.auth_context?.actor_id || req.auth_context?.user_id
-    console.log("Current user ID (simulated):", currentUserId)
+    console.log("Current user ID:", currentUserId)
 
     // Verificar permisos jerárquicos para eliminación
     if (currentUserId) {
