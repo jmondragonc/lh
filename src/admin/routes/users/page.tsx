@@ -11,54 +11,65 @@ const UsuariosMainPage = () => {
   })
   const [loading, setLoading] = useState(true)
   const [isNonSuperAdmin, setIsNonSuperAdmin] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    checkUserLevel()
-    fetchStats()
+    getCurrentUser()
   }, [])
 
-  const checkUserLevel = () => {
-    // SIMULACIÓN TEMPORAL: Detectar si es usuario no-Super Admin
-    const simulateUser = new URLSearchParams(window.location.search).get('simulate_user')
-    const isNonSuper = simulateUser && !simulateUser.includes('super_admin')
-    setIsNonSuperAdmin(isNonSuper)
+  const getCurrentUser = async () => {
+    try {
+      // Obtener usuario actual desde la API de MedusaJS
+      const response = await fetch('/admin/users/me')
+      if (response.ok) {
+        const userData = await response.json()
+        setCurrentUserId(userData.user?.id)
+        // Cargar stats (el backend aplicará el filtrado automáticamente)
+        await fetchStats(userData.user?.id)
+      } else {
+        console.error('Error obteniendo usuario actual')
+      }
+    } catch (error) {
+      console.error('Error en getCurrentUser:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const fetchStats = async () => {
+
+  const fetchStats = async (userId: string) => {
     try {
-      // SIMULACIÓN TEMPORAL: Usar mismo parámetro para consistency
-      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user') || 'super_admin_user_id'
+      // Si hay simulación en URL, usarla; sino usar el usuario real
+      const simulateUser = new URLSearchParams(window.location.search).get('simulate_user')
+      const finalUserId = simulateUser || userId
       
-      // Fetch users from Longhorn API
-      const usersResponse = await fetch(`/admin/longhorn/users?simulate_user=${simulateUser}`)
+      // Fetch users from Longhorn API - solo añadir simulate_user si existe
+      const usersUrl = simulateUser ? `/admin/longhorn/users?simulate_user=${simulateUser}` : '/admin/longhorn/users'
+      const usersResponse = await fetch(usersUrl)
       const usersData = await usersResponse.json()
       const users = usersData.users || []
 
-      // Fetch roles from Longhorn API  
-      const rolesResponse = await fetch(`/admin/longhorn/roles?simulate_user=${simulateUser}`)
+      // Fetch roles from Longhorn API - solo añadir simulate_user si existe  
+      const rolesUrl = simulateUser ? `/admin/longhorn/roles?simulate_user=${simulateUser}` : '/admin/longhorn/roles'
+      const rolesResponse = await fetch(rolesUrl)
       const rolesData = await rolesResponse.json()
       const roles = rolesData.roles || []
 
-      // Filtrar usuarios recientes sin Super Admins
-      const filteredRecentUsers = users
-        .filter((user: any) => {
-          if (!isNonSuperAdmin) return true // Super Admin ve todos
-          // Filtrar usuarios con rol Super Admin de recientes
-          const hasSuperAdminRole = user.longhorn_roles?.some((userRole: any) => 
-            userRole.role?.type === 'super_admin'
-          )
-          return !hasSuperAdminRole
-        })
+      // El backend ya aplica el filtrado jerárquico, usar datos directamente
+      const recentUsers = users
         .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 5)
 
-      // Calculate stats
+      // Calculate stats usando datos ya filtrados del backend
       setStats({
         totalUsers: users.length,
         totalRoles: roles.length,
         activeUsers: users.filter(u => u.is_active !== false).length,
-        recentUsers: filteredRecentUsers
+        recentUsers: recentUsers
       })
+      
+      // Actualizar estado de filtrado basado en la respuesta del backend
+      setIsNonSuperAdmin(usersData.filtered || false)
     } catch (error) {
       console.error("Error fetching stats:", error)
     } finally {

@@ -3,17 +3,18 @@ import {
   MedusaResponse
 } from "@medusajs/framework"
 import { ROLE_TYPES } from "../../../../../modules/longhorn/models/role"
+import type { LonghornAuthenticatedRequest } from "../../../../types/longhorn-auth"
 
 export const GET = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {
     const longhornService = req.scope.resolve("longhorn")
     const { id } = req.params
 
-    // Usuario autenticado por middleware
-    console.log('🔍 Authenticated user ID for role retrieval:', req.auth_context?.user_id)
+    // Usuario autenticado por middleware seguro
+    console.log('✅ Authenticated user ID del middleware:', req.longhornAuth.userId)
 
     const roles = await longhornService.listLonghornRoles({ 
       id, 
@@ -52,7 +53,7 @@ export const GET = async (
 }
 
 export const PUT = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -63,17 +64,8 @@ export const PUT = async (
     console.log("=== EDICIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===")
     console.log("Request:", { id, name, type, description })
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.app_metadata?.user_id
-    
-    if (!currentUserId) {
-      console.error('❌ Auth context:', req.auth_context)
-      console.error('❌ Expected: { app_metadata: { user_id: "..." } }')
-      return res.status(401).json({
-        message: "Usuario no autenticado",
-        error: "El middleware de autenticación debe proporcionar user_id"
-      })
-    }
+    // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
+    const currentUserId = req.longhornAuth.userId
 
     // Verificar que el rol existe
     const existingRoles = await longhornService.listLonghornRoles({ 
@@ -196,7 +188,7 @@ export const PUT = async (
 }
 
 export const DELETE = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -206,16 +198,8 @@ export const DELETE = async (
     console.log("=== ELIMINACIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===")
     console.log("Request:", { id })
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.app_metadata?.user_id
-    
-    if (!currentUserId) {
-      console.error('❌ Auth context:', req.auth_context)
-      return res.status(401).json({
-        message: "Usuario no autenticado",
-        error: "El middleware de autenticación debe proporcionar user_id"
-      })
-    }
+    // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
+    const currentUserId = req.longhornAuth.userId
 
     // Verificar que el rol existe
     const existingRoles = await longhornService.listLonghornRoles({ 

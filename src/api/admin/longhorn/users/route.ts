@@ -3,9 +3,10 @@ import {
   MedusaResponse
 } from "@medusajs/framework"
 import { Modules } from "@medusajs/framework/utils"
+import type { LonghornAuthenticatedRequest } from "../../../types/longhorn-auth"
 
 export const GET = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -15,27 +16,17 @@ export const GET = async (
     const longhornService = req.scope.resolve("longhorn")
     const { simulate_user } = req.query
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO (autenticación real de MedusaJS)
-    const currentUserId = req.auth_context?.app_metadata?.user_id
+    // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
+    const currentUserId = req.longhornAuth.userId
     
-    // Solo permitir simulate_user en desarrollo para testing
-    const finalUserId = process.env.NODE_ENV === 'development' && simulate_user ? simulate_user as string : currentUserId
-    console.log('🔍 USUARIO ACTUAL - Auth Context User ID:', req.auth_context?.app_metadata?.user_id)
-    console.log('🔍 USUARIO ACTUAL - Auth Context Actor ID:', req.auth_context?.actor_id)
-    console.log('🔍 USUARIO ACTUAL - Simulate User (dev only):', simulate_user)
-    console.log('🔍 USUARIO ACTUAL - Final User ID:', finalUserId)
-    console.log('🔍 USUARIO ACTUAL - Environment:', process.env.NODE_ENV)
-    console.log('🔍 USUARIO ACTUAL - Type of currentUserId:', typeof currentUserId)
-    console.log('🔍 USUARIO ACTUAL - Is currentUserId truthy?', !!currentUserId)
-
-    if (!finalUserId) {
-      console.error('❌ ERROR: No se pudo obtener ID del usuario actual')
-      console.error('❌ Auth context:', req.auth_context)
-      return res.status(401).json({
-        message: "Usuario no autenticado",
-        error: "El middleware de autenticación debe proporcionar user_id"
-      })
-    }
+    // Solo permitir simulate_user en desarrollo (ya validado por middleware)
+    const finalUserId = !req.longhornAuth.isProduction && simulate_user ? simulate_user as string : currentUserId
+    
+    console.log('✅ USUARIO ACTUAL - Del middleware seguro:', currentUserId)
+    console.log('✅ USUARIO ACTUAL - Es producción:', req.longhornAuth.isProduction)
+    console.log('✅ USUARIO ACTUAL - Simulate User:', simulate_user)
+    console.log('✅ USUARIO ACTUAL - Final User ID:', finalUserId)
+    console.log('✅ USUARIO ACTUAL - Token expira:', req.longhornAuth.tokenExpires?.toISOString())
 
     // Obtener todos los usuarios del sistema
     const allUsers = await userModuleService.listUsers()
@@ -204,7 +195,7 @@ export const GET = async (
 }
 
 export const POST = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {

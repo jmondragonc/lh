@@ -3,9 +3,10 @@ import {
   MedusaResponse
 } from "@medusajs/framework"
 import { Modules } from "@medusajs/framework/utils"
+import type { LonghornAuthenticatedRequest } from "../../../../types/longhorn-auth"
 
 export const GET = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -21,8 +22,8 @@ export const GET = async (
       })
     }
 
-    // Usuario autenticado por middleware
-    console.log('🔍 Authenticated user ID:', req.auth_context?.app_metadata?.user_id)
+    // Usuario autenticado por middleware seguro
+    console.log('✅ Authenticated user ID (del middleware):', req.longhornAuth.userId)
     
     // Obtener roles y tiendas del usuario
     const userRoles = await longhornService.getUserRoles(id)
@@ -48,7 +49,7 @@ export const GET = async (
 }
 
 export const PUT = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -58,20 +59,9 @@ export const PUT = async (
     const userModuleService = req.scope.resolve(Modules.USER)
     const longhornService = req.scope.resolve("longhorn")
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.app_metadata?.user_id
-    console.log('🔍 Current user ID for authentication:', currentUserId)
-    
-    if (!currentUserId) {
-      console.error('❌ ERROR: No authentication context')
-      console.error('❌ Auth context:', req.auth_context)
-      console.error('❌ Expected structure: { app_metadata: { user_id: "..." } }')
-      console.error('❌ Expected structure: { app_metadata: { user_id: "..." } }')
-      return res.status(401).json({
-        message: "Usuario no autenticado",
-        error: "El middleware de autenticación debe proporcionar user_id"
-      })
-    }
+    // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
+    const currentUserId = req.longhornAuth.userId
+    console.log('✅ Current user ID del middleware seguro:', currentUserId)
 
     const { first_name, last_name, email, avatar_url, metadata } = req.body
     
@@ -130,7 +120,7 @@ export const PUT = async (
 }
 
 export const DELETE = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -141,16 +131,8 @@ export const DELETE = async (
     const longhornService = req.scope.resolve("longhorn")
     const authModuleService = req.scope.resolve(Modules.AUTH)
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.app_metadata?.user_id
-    
-    if (!currentUserId) {
-      console.error('❌ Auth context:', req.auth_context)
-      return res.status(401).json({
-        message: "Usuario no autenticado",
-        error: "El middleware de autenticación debe proporcionar user_id"
-      })
-    }
+    // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
+    const currentUserId = req.longhornAuth.userId
 
     console.log('🔒 SECURITY CHECK - User Deletion')
     console.log('Current user:', currentUserId)

@@ -3,9 +3,10 @@ import {
   MedusaResponse
 } from "@medusajs/framework"
 import { ROLE_TYPES } from "../../../../modules/longhorn/models/role"
+import type { LonghornAuthenticatedRequest } from "../../../types/longhorn-auth"
 
 export const GET = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -15,16 +16,16 @@ export const GET = async (
     console.log('=== FILTRADO JERÁRQUICO DE ROLES ===') 
     console.log('Query params:', { type, is_active, simulate_user })
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.app_metadata?.user_id
+    // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
+    const currentUserId = req.longhornAuth.userId
     
-    // Solo permitir simulate_user en desarrollo para testing
-    const finalUserId = process.env.NODE_ENV === 'development' && simulate_user ? simulate_user as string : currentUserId
-    console.log('🔍 USUARIO ACTUAL - Auth Context User ID:', req.auth_context?.app_metadata?.user_id)
-    console.log('🔍 USUARIO ACTUAL - Auth Context Actor ID:', req.auth_context?.actor_id)
-    console.log('🔍 USUARIO ACTUAL - Simulate User (dev only):', simulate_user)
-    console.log('🔍 USUARIO ACTUAL - Final User ID:', finalUserId)
-    console.log('🔍 USUARIO ACTUAL - Environment:', process.env.NODE_ENV)
+    // Solo permitir simulate_user en desarrollo (ya validado por middleware)
+    const finalUserId = !req.longhornAuth.isProduction && simulate_user ? simulate_user as string : currentUserId
+    
+    console.log('✅ USUARIO ACTUAL - Del middleware seguro:', currentUserId)
+    console.log('✅ USUARIO ACTUAL - Es producción:', req.longhornAuth.isProduction)
+    console.log('✅ USUARIO ACTUAL - Simulate User:', simulate_user)
+    console.log('✅ USUARIO ACTUAL - Final User ID:', finalUserId)
 
     // Obtener roles filtrados por jerarquía
     const { roles: filteredRoles, isFiltered } = await longhornService.getFilteredRoles(finalUserId)
@@ -79,7 +80,7 @@ export const GET = async (
 }
 
 export const POST = async (
-  req: AuthenticatedMedusaRequest,
+  req: LonghornAuthenticatedRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -90,12 +91,12 @@ export const POST = async (
     console.log('=== CREACIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===')
     console.log('Request data:', { name, type, description, simulate_user })
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.app_metadata?.user_id
+    // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
+    const currentUserId = req.longhornAuth.userId
     
-    // Solo permitir simulate_user en desarrollo para testing
-    const finalUserId = process.env.NODE_ENV === 'development' && simulate_user ? simulate_user : currentUserId
-    console.log('Current user ID:', finalUserId)
+    // Solo permitir simulate_user en desarrollo (ya validado por middleware)
+    const finalUserId = !req.longhornAuth.isProduction && simulate_user ? simulate_user : currentUserId
+    console.log('✅ Current user ID del middleware seguro:', finalUserId)
 
     // Convertir tipo del frontend a tipo del modelo
     const typeMapping = {
