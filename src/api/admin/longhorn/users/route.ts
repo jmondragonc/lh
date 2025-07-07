@@ -1,11 +1,11 @@
 import { 
-  MedusaRequest, 
+  AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
 import { Modules } from "@medusajs/framework/utils"
 
 export const GET = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -15,19 +15,25 @@ export const GET = async (
     const longhornService = req.scope.resolve("longhorn")
     const { simulate_user } = req.query
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
-    const currentUserId = simulate_user as string || req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
-    console.log('🔍 USUARIO ACTUAL - Auth Context User ID:', req.auth_context?.user_id)
-    console.log('🔍 USUARIO ACTUAL - Simulate User (override):', simulate_user)
-    console.log('🔍 USUARIO ACTUAL - Final User ID:', currentUserId)
+    // OBTENER USUARIO ACTUAL AUTENTICADO (autenticación real de MedusaJS)
+    const currentUserId = req.auth_context?.app_metadata?.user_id
+    
+    // Solo permitir simulate_user en desarrollo para testing
+    const finalUserId = process.env.NODE_ENV === 'development' && simulate_user ? simulate_user as string : currentUserId
+    console.log('🔍 USUARIO ACTUAL - Auth Context User ID:', req.auth_context?.app_metadata?.user_id)
+    console.log('🔍 USUARIO ACTUAL - Auth Context Actor ID:', req.auth_context?.actor_id)
+    console.log('🔍 USUARIO ACTUAL - Simulate User (dev only):', simulate_user)
+    console.log('🔍 USUARIO ACTUAL - Final User ID:', finalUserId)
+    console.log('🔍 USUARIO ACTUAL - Environment:', process.env.NODE_ENV)
     console.log('🔍 USUARIO ACTUAL - Type of currentUserId:', typeof currentUserId)
     console.log('🔍 USUARIO ACTUAL - Is currentUserId truthy?', !!currentUserId)
 
-    if (!currentUserId) {
+    if (!finalUserId) {
       console.error('❌ ERROR: No se pudo obtener ID del usuario actual')
+      console.error('❌ Auth context:', req.auth_context)
       return res.status(401).json({
         message: "Usuario no autenticado",
-        error: "No se pudo verificar la identidad del usuario"
+        error: "El middleware de autenticación debe proporcionar user_id"
       })
     }
 
@@ -74,13 +80,13 @@ export const GET = async (
     let filteredUsers = enrichedUsers
     let isFiltered = false
 
-    if (currentUserId) {
+    if (finalUserId) {
       try {
         console.log('\n=== STARTING HIERARCHICAL FILTERING ===')
         console.log('🔍 Checking if current user is Super Admin...')
-        console.log('🔍 Current user ID:', currentUserId)
+        console.log('🔍 Current user ID:', finalUserId)
         
-        const isSuperAdmin = await longhornService.isSuperAdmin(currentUserId)
+        const isSuperAdmin = await longhornService.isSuperAdmin(finalUserId)
         console.log('🔍 isSuperAdmin() returned:', isSuperAdmin)
         console.log('🔍 Type of isSuperAdmin result:', typeof isSuperAdmin)
         console.log('🔍 Is isSuperAdmin truthy?', !!isSuperAdmin)
@@ -198,7 +204,7 @@ export const GET = async (
 }
 
 export const POST = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {

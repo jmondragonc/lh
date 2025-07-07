@@ -1,11 +1,11 @@
 import { 
-  MedusaRequest, 
+  AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
 import { ROLE_TYPES } from "../../../../modules/longhorn/models/role"
 
 export const GET = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -15,14 +15,19 @@ export const GET = async (
     console.log('=== FILTRADO JERÁRQUICO DE ROLES ===') 
     console.log('Query params:', { type, is_active, simulate_user })
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
-    const currentUserId = simulate_user as string || req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
-    console.log('🔍 USUARIO ACTUAL - Auth Context User ID:', req.auth_context?.user_id)
-    console.log('🔍 USUARIO ACTUAL - Simulate User (override):', simulate_user)
-    console.log('🔍 USUARIO ACTUAL - Final User ID:', currentUserId)
+    // OBTENER USUARIO ACTUAL AUTENTICADO
+    const currentUserId = req.auth_context?.app_metadata?.user_id
+    
+    // Solo permitir simulate_user en desarrollo para testing
+    const finalUserId = process.env.NODE_ENV === 'development' && simulate_user ? simulate_user as string : currentUserId
+    console.log('🔍 USUARIO ACTUAL - Auth Context User ID:', req.auth_context?.app_metadata?.user_id)
+    console.log('🔍 USUARIO ACTUAL - Auth Context Actor ID:', req.auth_context?.actor_id)
+    console.log('🔍 USUARIO ACTUAL - Simulate User (dev only):', simulate_user)
+    console.log('🔍 USUARIO ACTUAL - Final User ID:', finalUserId)
+    console.log('🔍 USUARIO ACTUAL - Environment:', process.env.NODE_ENV)
 
     // Obtener roles filtrados por jerarquía
-    const { roles: filteredRoles, isFiltered } = await longhornService.getFilteredRoles(currentUserId)
+    const { roles: filteredRoles, isFiltered } = await longhornService.getFilteredRoles(finalUserId)
     console.log('Roles after hierarchy filtering:', filteredRoles.length, 'roles, filtered:', isFiltered)
 
     // Aplicar filtros adicionales de query params
@@ -74,7 +79,7 @@ export const GET = async (
 }
 
 export const POST = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -85,12 +90,24 @@ export const POST = async (
     console.log('=== CREACIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===')
     console.log('Request data:', { name, type, description, simulate_user })
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
-    const currentUserId = simulate_user || req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
-    console.log('Current user ID:', currentUserId)
+    // OBTENER USUARIO ACTUAL AUTENTICADO
+    const currentUserId = req.auth_context?.app_metadata?.user_id
+    
+    // Solo permitir simulate_user en desarrollo para testing
+    const finalUserId = process.env.NODE_ENV === 'development' && simulate_user ? simulate_user : currentUserId
+    console.log('Current user ID:', finalUserId)
+
+    // Convertir tipo del frontend a tipo del modelo
+    const typeMapping = {
+      "super_admin": ROLE_TYPES.SUPER_ADMIN,
+      "local_manager": ROLE_TYPES.STORE_MANAGER,
+      "local_staff": ROLE_TYPES.STORE_STAFF
+    }
+    const modelType = typeMapping[type as string] || type
+    console.log('Type mapping:', { frontendType: type, modelType })
 
     // Verificar permisos de creación jerárquicos
-    const canCreate = await longhornService.canCreateRole(currentUserId, modelType)
+    const canCreate = await longhornService.canCreateRole(finalUserId, modelType)
     console.log('Can create role?', canCreate, 'for type:', modelType)
     
     if (!canCreate) {
@@ -108,7 +125,7 @@ export const POST = async (
       permissions: permissions || [],
       metadata: { 
         is_active,
-        created_by: currentUserId 
+        created_by: finalUserId 
       }
     })
 

@@ -12,12 +12,8 @@ export const GET = async (
     const longhornService = req.scope.resolve("longhorn")
     const { id } = req.params
 
-    // Verificar autenticación
-    if (!req.auth_context?.user_id) {
-      return res.status(401).json({
-        message: "Usuario no autenticado"
-      })
-    }
+    // Usuario autenticado por middleware
+    console.log('🔍 Authenticated user ID for role retrieval:', req.auth_context?.user_id)
 
     const roles = await longhornService.listLonghornRoles({ 
       id, 
@@ -68,12 +64,14 @@ export const PUT = async (
     console.log("Request:", { id, name, type, description })
 
     // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.user_id
+    const currentUserId = req.auth_context?.app_metadata?.user_id
     
     if (!currentUserId) {
+      console.error('❌ Auth context:', req.auth_context)
+      console.error('❌ Expected: { app_metadata: { user_id: "..." } }')
       return res.status(401).json({
         message: "Usuario no autenticado",
-        error: "Authentication required"
+        error: "El middleware de autenticación debe proporcionar user_id"
       })
     }
 
@@ -209,12 +207,13 @@ export const DELETE = async (
     console.log("Request:", { id })
 
     // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.user_id
+    const currentUserId = req.auth_context?.app_metadata?.user_id
     
     if (!currentUserId) {
+      console.error('❌ Auth context:', req.auth_context)
       return res.status(401).json({
         message: "Usuario no autenticado",
-        error: "Authentication required"
+        error: "El middleware de autenticación debe proporcionar user_id"
       })
     }
 

@@ -1,11 +1,11 @@
 import { 
-  MedusaRequest, 
+  AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
 import { Modules } from "@medusajs/framework/utils"
 
 export const GET = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -21,12 +21,8 @@ export const GET = async (
       })
     }
 
-    // Verificar autenticación
-    if (!req.auth_context?.user_id) {
-      return res.status(401).json({
-        message: "Usuario no autenticado"
-      })
-    }
+    // Usuario autenticado por middleware
+    console.log('🔍 Authenticated user ID:', req.auth_context?.app_metadata?.user_id)
     
     // Obtener roles y tiendas del usuario
     const userRoles = await longhornService.getUserRoles(id)
@@ -52,7 +48,7 @@ export const GET = async (
 }
 
 export const PUT = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -62,14 +58,18 @@ export const PUT = async (
     const userModuleService = req.scope.resolve(Modules.USER)
     const longhornService = req.scope.resolve("longhorn")
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
-    const currentUserId = req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
+    // OBTENER USUARIO ACTUAL AUTENTICADO
+    const currentUserId = req.auth_context?.app_metadata?.user_id
     console.log('🔍 Current user ID for authentication:', currentUserId)
     
     if (!currentUserId) {
       console.error('❌ ERROR: No authentication context')
+      console.error('❌ Auth context:', req.auth_context)
+      console.error('❌ Expected structure: { app_metadata: { user_id: "..." } }')
+      console.error('❌ Expected structure: { app_metadata: { user_id: "..." } }')
       return res.status(401).json({
-        message: "Usuario no autenticado"
+        message: "Usuario no autenticado",
+        error: "El middleware de autenticación debe proporcionar user_id"
       })
     }
 
@@ -130,7 +130,7 @@ export const PUT = async (
 }
 
 export const DELETE = async (
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -141,13 +141,14 @@ export const DELETE = async (
     const longhornService = req.scope.resolve("longhorn")
     const authModuleService = req.scope.resolve(Modules.AUTH)
 
-    // OBTENER USUARIO ACTUAL AUTENTICADO (con fallback para testing)
-    const currentUserId = req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
+    // OBTENER USUARIO ACTUAL AUTENTICADO
+    const currentUserId = req.auth_context?.app_metadata?.user_id
     
     if (!currentUserId) {
+      console.error('❌ Auth context:', req.auth_context)
       return res.status(401).json({
         message: "Usuario no autenticado",
-        error: "Authentication required"
+        error: "El middleware de autenticación debe proporcionar user_id"
       })
     }
 

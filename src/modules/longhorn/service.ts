@@ -4,7 +4,12 @@ import LonghornStore from "./models/store"
 import LonghornUserRole from "./models/user-role"
 import LonghornUserStore from "./models/user-store"
 import LonghornStoreProduct from "./models/store-product"
+import LonghornMenuCategory from "./models/menu-category"
+import LonghornMenuItem from "./models/menu-item"
+import LonghornStoreMenuItem from "./models/store-menu-item"
 import { ROLE_TYPES, RoleType } from "./models/role"
+import { MENU_CATEGORY_TYPES } from "./models/menu-category"
+import { DISH_TYPES, COOKING_POINTS, SPICE_LEVELS } from "./models/menu-item"
 
 /**
  * Servicio principal del módulo Longhorn
@@ -14,6 +19,9 @@ import { ROLE_TYPES, RoleType } from "./models/role"
  * - Asignación Usuario-Rol (LonghornUserRole)
  * - Asignación Usuario-Tienda (LonghornUserStore)
  * - Productos por Tienda (LonghornStoreProduct)
+ * - Categorías de Menú (LonghornMenuCategory)
+ * - Items de Menú (LonghornMenuItem)
+ * - Items de Menú por Tienda (LonghornStoreMenuItem)
  */
 class LonghornModuleService extends MedusaService({
   LonghornRole,
@@ -21,6 +29,9 @@ class LonghornModuleService extends MedusaService({
   LonghornUserRole,
   LonghornUserStore,
   LonghornStoreProduct,
+  LonghornMenuCategory,
+  LonghornMenuItem,
+  LonghornStoreMenuItem,
 }) {
 
   // ======= MÉTODOS DE ROLES =======
@@ -734,6 +745,392 @@ class LonghornModuleService extends MedusaService({
     } catch (error) {
       console.error('Error checking role edit permission:', error)
       return false // Por seguridad, denegar en caso de error
+    }
+  }
+
+  // ======= MÉTODOS DE CATEGORÍAS DE MENÚ =======
+
+  async createMenuCategory(data: {
+    name: string
+    description?: string
+    type: string
+    display_order?: number
+    icon_url?: string
+    is_active?: boolean
+    parent_category_id?: string
+    metadata?: Record<string, any>
+  }) {
+    const categoryData = {
+      is_active: true,
+      display_order: 0,
+      ...data
+    }
+
+    const createdCategories = await this.createLonghornMenuCategories([categoryData])
+    return createdCategories[0]
+  }
+
+  async getActiveMenuCategories() {
+    return await this.listLonghornMenuCategories({
+      is_active: true,
+      deleted_at: null
+    })
+  }
+
+  async getMenuCategoriesByType(type: string) {
+    return await this.listLonghornMenuCategories({
+      type,
+      is_active: true,
+      deleted_at: null
+    })
+  }
+
+  async getMenuCategoryById(id: string) {
+    const categories = await this.listLonghornMenuCategories({
+      id,
+      deleted_at: null
+    })
+    return categories[0] || null
+  }
+
+  async updateMenuCategory(id: string, data: {
+    name?: string
+    description?: string
+    type?: string
+    display_order?: number
+    icon_url?: string
+    is_active?: boolean
+    parent_category_id?: string
+    metadata?: Record<string, any>
+  }) {
+    const updatedCategories = await this.updateLonghornMenuCategories([{ id, ...data }])
+    return updatedCategories[0]
+  }
+
+  async deleteMenuCategory(id: string) {
+    return await this.deleteLonghornMenuCategories([id])
+  }
+
+  // ======= MÉTODOS DE ITEMS DE MENÚ =======
+
+  async createMenuItem(data: {
+    name: string
+    description?: string
+    short_description?: string
+    menu_category_id: string
+    dish_type: string
+    ingredients?: string[]
+    allergens?: string[]
+    cooking_points_available?: string[]
+    spice_level?: string
+    calories?: number
+    proteins?: number
+    carbs?: number
+    fats?: number
+    weight?: number
+    base_price: number
+    preparation_time?: number
+    image_url?: string
+    gallery_urls?: string[]
+    is_active?: boolean
+    is_popular?: boolean
+    is_new?: boolean
+    is_spicy?: boolean
+    is_vegetarian?: boolean
+    is_vegan?: boolean
+    is_gluten_free?: boolean
+    display_order?: number
+    min_age_required?: number
+    metadata?: Record<string, any>
+  }) {
+    const itemData = {
+      spice_level: "SIN_PICANTE",
+      preparation_time: 15,
+      is_active: true,
+      is_popular: false,
+      is_new: false,
+      is_spicy: false,
+      is_vegetarian: false,
+      is_vegan: false,
+      is_gluten_free: false,
+      display_order: 0,
+      ...data
+    }
+
+    const createdItems = await this.createLonghornMenuItems([itemData])
+    return createdItems[0]
+  }
+
+  async getActiveMenuItems() {
+    return await this.listLonghornMenuItems({
+      is_active: true,
+      deleted_at: null
+    })
+  }
+
+  async getMenuItemsByCategory(menu_category_id: string) {
+    return await this.listLonghornMenuItems({
+      menu_category_id,
+      is_active: true,
+      deleted_at: null
+    })
+  }
+
+  async getMenuItemById(id: string) {
+    const items = await this.listLonghornMenuItems({
+      id,
+      deleted_at: null
+    })
+    return items[0] || null
+  }
+
+  async getPopularMenuItems() {
+    return await this.listLonghornMenuItems({
+      is_popular: true,
+      is_active: true,
+      deleted_at: null
+    })
+  }
+
+  async getNewMenuItems() {
+    return await this.listLonghornMenuItems({
+      is_new: true,
+      is_active: true,
+      deleted_at: null
+    })
+  }
+
+  async updateMenuItem(id: string, data: {
+    name?: string
+    description?: string
+    short_description?: string
+    menu_category_id?: string
+    dish_type?: string
+    ingredients?: string[]
+    allergens?: string[]
+    cooking_points_available?: string[]
+    spice_level?: string
+    calories?: number
+    proteins?: number
+    carbs?: number
+    fats?: number
+    weight?: number
+    base_price?: number
+    preparation_time?: number
+    image_url?: string
+    gallery_urls?: string[]
+    is_active?: boolean
+    is_popular?: boolean
+    is_new?: boolean
+    is_spicy?: boolean
+    is_vegetarian?: boolean
+    is_vegan?: boolean
+    is_gluten_free?: boolean
+    display_order?: number
+    min_age_required?: number
+    metadata?: Record<string, any>
+  }) {
+    const updatedItems = await this.updateLonghornMenuItems([{ id, ...data }])
+    return updatedItems[0]
+  }
+
+  async deleteMenuItem(id: string) {
+    return await this.deleteLonghornMenuItems([id])
+  }
+
+  // ======= MÉTODOS DE ITEMS DE MENÚ POR TIENDA =======
+
+  async assignMenuItemToStore(data: {
+    store_id: string
+    menu_item_id: string
+    is_available?: boolean
+    is_visible_in_menu?: boolean
+    store_price?: number
+    discount_percentage?: number
+    store_name?: string
+    store_description?: string
+    store_image_url?: string
+    daily_limit?: number
+    current_stock?: number
+    estimated_prep_time?: number
+    available_hours?: Record<string, any>
+    unavailable_dates?: string[]
+    display_order?: number
+    is_featured?: boolean
+    promotion_text?: string
+    metadata?: Record<string, any>
+  }) {
+    // Verificar que no exista ya una asignación
+    const existingAssignments = await this.listLonghornStoreMenuItems({
+      store_id: data.store_id,
+      menu_item_id: data.menu_item_id,
+      deleted_at: null
+    })
+
+    if (existingAssignments.length > 0) {
+      throw new Error(`Menu item is already assigned to this store`)
+    }
+
+    const storeMenuItemData = {
+      is_available: true,
+      is_visible_in_menu: true,
+      is_featured: false,
+      times_ordered: 0,
+      ...data
+    }
+
+    const createdStoreMenuItems = await this.createLonghornStoreMenuItems([storeMenuItemData])
+    return createdStoreMenuItems[0]
+  }
+
+  async getStoreMenuItems(store_id: string, options?: {
+    available_only?: boolean
+    visible_only?: boolean
+    featured_only?: boolean
+    category_id?: string
+  }) {
+    const filters: any = {
+      store_id,
+      deleted_at: null
+    }
+
+    if (options?.available_only) {
+      filters.is_available = true
+    }
+
+    if (options?.visible_only) {
+      filters.is_visible_in_menu = true
+    }
+
+    if (options?.featured_only) {
+      filters.is_featured = true
+    }
+
+    const storeMenuItems = await this.listLonghornStoreMenuItems(filters)
+
+    // Si se solicita filtrar por categoría, hacer JOIN manual
+    if (options?.category_id) {
+      const enrichedItems = await Promise.all(
+        storeMenuItems.map(async (storeMenuItem) => {
+          const menuItems = await this.listLonghornMenuItems({ id: storeMenuItem.menu_item_id })
+          const menuItem = menuItems[0]
+          
+          return {
+            ...storeMenuItem,
+            menu_item: menuItem
+          }
+        })
+      )
+      
+      return enrichedItems.filter(item => 
+        item.menu_item?.menu_category_id === options.category_id
+      )
+    }
+
+    return storeMenuItems
+  }
+
+  async getMenuItemStores(menu_item_id: string) {
+    return await this.listLonghornStoreMenuItems({
+      menu_item_id,
+      deleted_at: null
+    })
+  }
+
+  async updateStoreMenuItem(store_id: string, menu_item_id: string, data: {
+    is_available?: boolean
+    is_visible_in_menu?: boolean
+    store_price?: number
+    discount_percentage?: number
+    store_name?: string
+    store_description?: string
+    store_image_url?: string
+    daily_limit?: number
+    current_stock?: number
+    estimated_prep_time?: number
+    available_hours?: Record<string, any>
+    unavailable_dates?: string[]
+    display_order?: number
+    is_featured?: boolean
+    promotion_text?: string
+    metadata?: Record<string, any>
+  }) {
+    const storeMenuItems = await this.listLonghornStoreMenuItems({
+      store_id,
+      menu_item_id,
+      deleted_at: null
+    })
+
+    if (storeMenuItems.length === 0) {
+      throw new Error(`Store menu item assignment not found`)
+    }
+
+    const updatedStoreMenuItems = await this.updateLonghornStoreMenuItems([{
+      id: storeMenuItems[0].id,
+      ...data
+    }])
+    return updatedStoreMenuItems[0]
+  }
+
+  async removeMenuItemFromStore(store_id: string, menu_item_id: string) {
+    const storeMenuItems = await this.listLonghornStoreMenuItems({
+      store_id,
+      menu_item_id,
+      deleted_at: null
+    })
+
+    if (storeMenuItems.length === 0) {
+      throw new Error(`Store menu item assignment not found`)
+    }
+
+    return await this.deleteLonghornStoreMenuItems([storeMenuItems[0].id])
+  }
+
+  async isMenuItemAvailableInStore(store_id: string, menu_item_id: string): Promise<boolean> {
+    const storeMenuItems = await this.listLonghornStoreMenuItems({
+      store_id,
+      menu_item_id,
+      is_available: true,
+      is_visible_in_menu: true,
+      deleted_at: null
+    })
+
+    return storeMenuItems.length > 0
+  }
+
+  async bulkAssignMenuItems(store_id: string, menu_item_ids: string[]) {
+    const assignments = []
+    
+    for (const menu_item_id of menu_item_ids) {
+      try {
+        const assignment = await this.assignMenuItemToStore({
+          store_id,
+          menu_item_id
+        })
+        assignments.push(assignment)
+      } catch (error) {
+        // Skip if already assigned
+        console.warn(`Menu item ${menu_item_id} already assigned to store ${store_id}`)
+      }
+    }
+
+    return assignments
+  }
+
+  async incrementMenuItemOrders(store_id: string, menu_item_id: string) {
+    const storeMenuItems = await this.listLonghornStoreMenuItems({
+      store_id,
+      menu_item_id,
+      deleted_at: null
+    })
+
+    if (storeMenuItems.length > 0) {
+      const storeMenuItem = storeMenuItems[0]
+      await this.updateLonghornStoreMenuItems([{
+        id: storeMenuItem.id,
+        times_ordered: (storeMenuItem.times_ordered || 0) + 1,
+        last_ordered_at: new Date()
+      }])
     }
   }
 
