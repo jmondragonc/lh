@@ -29,8 +29,10 @@
 - [🚀 Instalación y Configuración](#-instalación-y-configuración)
 - [📁 Estructura del Proyecto](#-estructura-del-proyecto)
 - [🔗 APIs Disponibles](#-apis-disponibles)
+- [⚡ Performance](#-performance)
 - [🧪 Testing](#-testing)
 - [📚 Documentación](#-documentación)
+- [🗃️ Herramientas de Base de Datos](#️-herramientas-de-base-de-datos)
 - [🤝 Contribución](#-contribución)
 - [📞 Contacto](#-contacto)
 
@@ -433,6 +435,7 @@ yarn test:integration:modules
 - **[ROADMAP.md](./ROADMAP.md)**: Visión completa del proyecto, arquitectura híbrida y plan de fases
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)**: Log cronológico de desarrollo y decisiones técnicas
 - **[INSTRUCCIONES_HIBRIDAS.md](./INSTRUCCIONES_HIBRIDAS.md)**: Plan de integración híbrida
+- **[DATABASE_TOOLS.md](./DATABASE_TOOLS.md)**: Herramientas PostgreSQL MCP para análisis y optimización
 
 ### 🔧 Documentación de APIs
 
@@ -446,6 +449,25 @@ yarn test:integration:modules
 - **Estándares**: TypeScript estricto + ESLint
 - **Commits**: Conventional commits
 - **Testing**: Cobertura mínima del 80%
+
+---
+
+## 🗃️ Herramientas de Base de Datos
+
+El proyecto cuenta con herramientas especializadas de PostgreSQL MCP para análisis y optimización:
+
+### 📊 Análisis de Rendimiento
+- **Salud de BD**: Análisis completo de índices, conexiones, vacuum y replicación
+- **Optimización de consultas**: Recomendaciones automáticas de índices
+- **Monitoreo continuo**: Identificación de consultas problemáticas
+- **Planes de ejecución**: Análisis detallado con índices hipotéticos
+
+### 🛠️ Gestión Avanzada
+- **Ejecución SQL**: Testing directo de consultas
+- **Exploración de esquemas**: Navegación de estructura de BD
+- **Administración**: Gestión completa de objetos de base de datos
+
+**Ver documentación completa**: [DATABASE_TOOLS.md](./DATABASE_TOOLS.md)
 
 ---
 

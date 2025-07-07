@@ -2,16 +2,30 @@
 
 > **📊 Para la visión completa del proyecto, roadmap y arquitectura híbrida, consultar [ROADMAP.md](./ROADMAP.md)**
 
-## Fase 1: Sistema de Ecommerce Multi-Local
+## 🚀 PLAN DE FASES EVOLUTIVO
 
-### Objetivo
-Crear un sistema de ecommerce para restaurantes con múltiples locales, gestión de usuarios jerárquica y cartas personalizadas por local.
+### **🔧 FASE 1: INFRAESTRUCTURA HÍBRIDA** ✅ **EN PROGRESO AVANZADO**
+**Objetivo:** Establecer base técnica sólida combinando implementación previa con nuevos desarrollos optimizados.
 
-**🔄 ESTRATEGIA ACTUALIZADA**: Enfoque híbrido combinando implementación previa existente con nuevos desarrollos optimizados.
+**🔄 ESTRATEGIA HÍBRIDA**: Combinar lo mejor de ambos sistemas para maximizar eficiencia y minimizar riesgo.
 
-### División de Desarrollo (Actualizada con Enfoque Híbrido)
+### **🍽️ FASE 2: GESTIÓN DE MENÚ AVANZADA** ⏳ **PLANIFICADA Q2 2025**
+**Objetivo:** Sistema completo de carta por sede con inventario integrado.
+
+### **🗺️ FASE 3: DELIVERY AVANZADO** ⏳ **PLANIFICADA Q3 2025** 
+**Objetivo:** Sistema completo de entregas con zonas de cobertura y tarifas dinámicas.
+
+### **🔄 FASE 4: PREPARACIÓN PARA ESCALA** ⏳ **PLANIFICADA Q4 2025**
+**Objetivo:** Sistema preparado para crecimiento, integraciones y monitoring avanzado.
+
+---
+
+## 📊 FASE 1: INFRAESTRUCTURA HÍBRIDA - ESTADO ACTUAL
+
+### División de Desarrollo (Grupos dentro de Fase 1)
 
 #### GRUPO A: Infraestructura Base - ✅ COMPLETADO
+**Componente de Fase 1: Base técnica del sistema**
 **Lo implementado:**
 - [x] Análisis de estructura actual del proyecto Medusa
 - [x] Extensiones del modelo de datos para usuarios jerárquicos (modelos Longhorn)
@@ -25,6 +39,7 @@ Crear un sistema de ecommerce para restaurantes con múltiples locales, gestión
 - [x] **Mapeo completo** - todos los sistemas conectados e integrados
 
 #### GRUPO B: Sistema de Autenticación y Roles - ✅ COMPLETADO AL 95%
+**Componente de Fase 1: Seguridad y permisos jerárquicos**
 **🎯 FUNCIONALIDAD CRÍTICA IMPLEMENTADA:**
 - [x] **Creación de usuarios con contraseñas** - Endpoint POST funcional
 - [x] **Formulario completo** - Campos de contraseña y validaciones
@@ -39,6 +54,7 @@ Crear un sistema de ecommerce para restaurantes con múltiples locales, gestión
 - [ ] **Endpoint PUT** - Actualización de usuarios con contraseñas opcionales
 
 #### GRUPO C: Integración Híbrida - ⏳ NUEVA PRIORIDAD
+**Componente crítico de Fase 1: Fusión de sistemas anterior y nuevo**
 - [ ] Análisis del código anterior - revisar implementación previa
 - [ ] Migración de Sales Channels - integrar con nuestros modelos
 - [ ] Adopción de sistema de filtrado - implementar seguridad avanzada
@@ -47,13 +63,15 @@ Crear un sistema de ecommerce para restaurantes con múltiples locales, gestión
 - [ ] Actualización de APIs - híbrido de ambos enfoques
 
 #### GRUPO D: Gestión de Productos Avanzada - ⏳ REDEFINIDO
+**Componente de Fase 2: Sistema de carta multi-sede (Q2 2025)**
 - [ ] Modelo de carta general mejorado
 - [ ] Integración con Stock Locations para inventario
 - [ ] Sistema de herencia carta madre → local
 - [ ] APIs de gestión de productos por sede
 - [ ] Interface de gestión de menús por local
 
-#### GRUPO E: UI Extensions Completas - ⏳ ACELERADO
+#### GRUPO E: UI Extensions Completas - ⏳ ACELERADO  
+**Componente de Fase 1/2: Panel administrativo unificado**
 - [ ] Migración de páginas ya funcionales
 - [ ] Integración con nuestros endpoints
 - [ ] Widgets personalizados actualizados
@@ -61,6 +79,7 @@ Crear un sistema de ecommerce para restaurantes con múltiples locales, gestión
 - [ ] Dashboard unificado multi-local
 
 #### GRUPO F: Datos y Testing - ⏳ EXPANDIDO
+**Componente de Fase 1/2: Validación y datos reales**
 - [ ] Migración de datos del sistema anterior
 - [ ] Carta real de Longhorn poblada
 - [ ] Testing automatizado de integración
@@ -69,13 +88,15 @@ Crear un sistema de ecommerce para restaurantes con múltiples locales, gestión
 
 ---
 
-## 📊 ESTADO ACTUAL DEL PROYECTO - ENERO 2025
+## 📊 ESTADO ACTUAL DEL PROYECTO - JULIO 2025
 
-### 🎯 **RESUMEN EJECUTIVO**
-- **Estado General**: 75% del Grupo A + 85% del Grupo B + 25% del Grupo C completados
+### 🎯 **RESUMEN EJECUTIVO - FASE 1**
+- **Estado de Fase 1**: 85% completada (Infraestructura Híbrida casi lista)
+- **Grupos Completados**: A (100%) + B (95%) = Base sólida establecida
+- **Grupo en Progreso**: C (Integración Híbrida) - 25% completado
 - **Funcionalidades Críticas**: Sistema de usuarios y roles completamente operativo
-- **Próxima Prioridad**: Completar Grupo C (Integración Híbrida) y comenzar Grupo D
-- **Tiempo Estimado**: 2-3 semanas para completar integración híbrida
+- **Próxima Prioridad**: Completar Grupo C para finalizar Fase 1
+- **Timeline**: Q1 2025 para Fase 1, Q2 2025 para iniciar Fase 2 (Gestión de Menú)
 
 ### ✅ **COMPLETADO EXITOSAMENTE**
 
@@ -1267,49 +1288,145 @@ http://localhost:9000/app/users/management
 - Filtrado de seguridad automático implementado
 - Sistema de permisos granular funcionando
 
-### ⏳ EN PROGRESO/PENDIENTES
+### ⏳ EN PROGRESO/PENDIENTES POR FASE
 
-**GRUPO E - UI Extensions (Usuarios)**: **PRÓXIMA PRIORIDAD**
+#### **FASE 1 (EN PROGRESO) - INFRAESTRUCTURA HÍBRIDA**
+**GRUPO C - Integración Híbrida**: **PRÓXIMA PRIORIDAD**
+- [ ] Análisis completo del código anterior
+- [ ] Migración selectiva de UI Extensions
+- [ ] Adopción del sistema de filtrado avanzado
+- [ ] Testing exhaustivo de compatibilidad
+
+**GRUPO E - UI Extensions (Usuarios)**: **COMPLEMENTO FASE 1**
 - [ ] Gestión de usuarios (`/app/users/management`)
 - [ ] Widgets de creación rápida
 - [ ] Dashboard con métricas
 
-**GRUPO D - Gestión de Productos**: **MEDIANO PLAZO**
+#### **FASE 2 (PLANIFICADA Q2 2025) - GESTIÓN DE MENÚ**
+**GRUPO D - Gestión de Productos**: **COMPONENTE PRINCIPAL FASE 2**
 - [ ] Carta general de Longhorn
 - [ ] Sistema de herencia carta madre → local
 - [ ] APIs de productos por sede
 
-**GRUPO F - Datos y Testing**: **LARGO PLAZO**
+#### **TRANSVERSAL A TODAS LAS FASES**
+**GRUPO F - Datos y Testing**: **CONTINUO**
 - [ ] Datos reales de carta Longhorn
 - [ ] Testing automatizado completo
 - [ ] Documentación final
 
-### 🏆 LOGROS PRINCIPALES
+### 🏆 LOGROS PRINCIPALES DE FASE 1
 
 1. **Arquitectura Híbrida Exitosa**: Combinación inteligente de implementación previa + nuevos desarrollos
-2. **Infraestructura Robusta**: 11 tiendas operativas con Sales Channels y Stock Locations
+2. **Infraestructura Robusta**: 11 tiendas operativas con Sales Channels y Stock Locations integrados
 3. **Sistema de Roles Completo**: Filtrado jerárquico, permisos granulares, UI profesional
-4. **APIs Escalables**: Backend preparado para crecimiento y nuevas funcionalidades
-5. **UI Extensions Nativas**: Integración perfecta con design system de MedusaJS
+4. **APIs Escalables**: Backend preparado para Fase 2 (Gestión de Menú) y crecimiento futuro
+5. **Base Sólida para Fases Futuras**: Infraestructura lista para delivery avanzado y escala
 
-### 📋 PLAN DE CONTINUACIÓN
+### 📋 PLAN DE CONTINUACIÓN POR FASES
 
-**Inmediato (1-2 días)**:
-- Implementar gestión de usuarios completa
-- Crear widgets de usuarios para dashboard
-- Testing integral del sistema de usuarios
+#### **INMEDIATO - COMPLETAR FASE 1 (4-6 semanas)**:
+**Prioridad 1: Grupo C - Integración Híbrida**
+- Analizar código anterior en detalle
+- Migrar UI Extensions maduras
+- Implementar sistema de filtrado avanzado
+- Testing exhaustivo de compatibilidad
 
-**Corto plazo (1 semana)**:
-- Completar todas las UI Extensions restantes
-- Implementar dashboard unificado
+**Prioridad 2: Finalizar UI Extensions**
+- Completar gestión de usuarios
+- Crear widgets de dashboard
 - Optimizar rendimiento y UX
 
-**Mediano plazo (2-3 semanas)**:
-- Desarrollar gestión de productos
-- Implementar carta general y local
-- Poblar datos reales de Longhorn
+#### **Q2 2025 - FASE 2: GESTIÓN DE MENÚ**
+- Desarrollar carta general con datos reales de Longhorn
+- Implementar sistema carta madre → local
+- Crear APIs de productos por sede
+- Dashboard de inventario por ubicación
+
+#### **Q3 2025 - FASE 3: DELIVERY AVANZADO**
+- Zonas de cobertura por mapa
+- Cálculo dinámico de tarifas
+- Seguimiento de pedidos en tiempo real
 
 **El proyecto Longhorn está en excelente estado técnico y funcional, con una base sólida para completar todas las funcionalidades restantes.**
+
+---
+
+## 🚀 ROADMAP DE FASES FUTURAS
+
+### 🍽️ **FASE 2: GESTIÓN DE MENÚ AVANZADA** (Q2 2025)
+**Objetivo:** Sistema completo de carta por sede con inventario integrado
+
+#### Componentes Planificados:
+- **Carta General (Catálogo Maestro)**
+  - Todas las opciones disponibles de Longhorn
+  - Categorías: Entradas, Carnes, Acompañamientos, Bebidas, Postres
+  - Información nutricional y alérgenos
+  
+- **Carta por Local**
+  - Selección de productos de la carta general
+  - Precios específicos por ubicación
+  - Disponibilidad en tiempo real
+  - Gestión de fotos y descripciones locales
+
+- **Inventory Management**
+  - Stock por Stock Location (integrado con sistema anterior)
+  - Notificaciones de stock bajo
+  - Sincronización automática con disponibilidad
+
+#### Entregables:
+- [ ] Modelo de carta general poblado con datos reales de Longhorn
+- [ ] Sistema de herencia carta madre → local
+- [ ] Interface de gestión de menús por local
+- [ ] APIs de productos con filtrado por sede
+- [ ] Dashboard de inventario por ubicación
+
+### 🗺️ **FASE 3: DELIVERY AVANZADO** (Q3 2025)
+**Objetivo:** Sistema completo de entregas con zonas y tarifas
+
+#### Componentes Planificados:
+- **Zonas de Cobertura**
+  - Definición de áreas de delivery por sede
+  - Mapas interactivos para configuración
+  - Validación automática de direcciones
+  
+- **Cálculo de Tarifas**
+  - Tarifas base por zona
+  - Ajustes por distancia y horario
+  - Promociones y descuentos por ubicación
+  
+- **Horarios Diferenciados**
+  - Horarios de atención por sede
+  - Horarios especiales (feriados, eventos)
+  - Configuración de tiempo de preparación
+
+#### Entregables:
+- [ ] Sistema de zonas configurables por mapa
+- [ ] Calculadora de delivery fees dinámica
+- [ ] Panel de gestión de horarios por sede
+- [ ] APIs de seguimiento de pedidos
+- [ ] App móvil para delivery (opcional)
+
+### 🔄 **FASE 4: PREPARACIÓN PARA ESCALA** (Q4 2025)
+**Objetivo:** Sistema preparado para crecimiento y integraciones
+
+#### Componentes Planificados:
+- **Service Layer para Integraciones**
+  - Conectores para sistemas de terceros
+  - APIs para integraciones B2B
+  - Webhooks para sincronización
+  
+- **Monitoring y Analytics**
+  - Métricas de negocio por sede
+  - Dashboards ejecutivos
+  - Alertas automáticas
+  - Reports automatizados
+
+#### Entregables:
+- [ ] APIs para integraciones externas
+- [ ] Dashboard ejecutivo con métricas
+- [ ] Sistema de monitoring completo
+- [ ] Documentación para terceros
+- [ ] Certificaciones de seguridad
 
 ### 2025-07-06 - GRUPO B COMPLETADO AL 100% - MIDDLEWARE DE AUTENTICACIÓN ROBUSTO ✅
 
@@ -1406,3 +1523,63 @@ req.auth_context?.app_metadata?.user_id
 - ✅ **Sistema operativo**: Listo para testing y Grupo D
 
 **🎯 SISTEMA REALMENTE FUNCIONAL - TESTING REQUIRED 🧪**
+
+---
+
+## 🛠️ HERRAMIENTAS DE DESARROLLO Y BASE DE DATOS
+
+### 📊 Herramientas PostgreSQL MCP Disponibles
+
+El proyecto cuenta con herramientas especializadas para análisis y optimización de la base de datos PostgreSQL:
+
+#### **Análisis de Rendimiento y Salud:**
+- **`analyze_db_health`**: Análisis completo de salud de la base de datos
+  - Índices (inválidos, duplicados, bloated)
+  - Conexiones y utilización
+  - Estado del vacuum y transaction ID wraparound
+  - Secuencias en riesgo de overflow
+  - Salud de replicación y slots
+  - Buffer cache hit rates
+  - Constraints inválidos
+
+- **`analyze_query_indexes`**: Análisis de consultas específicas (hasta 10) con recomendaciones de índices óptimos
+- **`analyze_workload_indexes`**: Análisis automático de consultas frecuentes del workload actual
+- **`get_top_queries`**: Identificación de consultas más lentas por tiempo total, promedio o consumo de recursos
+
+#### **Gestión y Administración:**
+- **`execute_sql`**: Ejecución directa de consultas SQL para testing y administración
+- **`explain_query`**: Análisis detallado del plan de ejecución con soporte para índices hipotéticos
+- **`get_object_details`**: Información completa de objetos de BD (tablas, vistas, secuencias, extensiones)
+- **`list_schemas`** / **`list_objects`**: Navegación y exploración de la estructura de la base de datos
+
+#### **Casos de Uso Específicos para Longhorn:**
+1. **Optimización de filtrado jerárquico**: Análisis de queries de usuarios por roles y tiendas
+2. **Rendimiento de productos**: Optimización de consultas de carta general vs. carta por local
+3. **Sales Channels**: Análisis de rendimiento de conexiones entre canales y ubicaciones
+4. **Stock Locations**: Monitoreo de consultas de inventario por sede
+5. **Monitoreo en producción**: Identificación proactiva de cuellos de botella
+
+#### **Ejemplo de Uso:**
+```bash
+# Análisis de salud general
+analyze_db_health(health_type="all")
+
+# Optimización de consulta específica
+analyze_query_indexes(queries=[
+  "SELECT * FROM longhorn_store WHERE district = 'Miraflores'",
+  "SELECT u.* FROM user u JOIN longhorn_user_role ur ON u.id = ur.user_id"
+])
+
+# Identificar consultas problemáticas
+get_top_queries(sort_by="total_time", limit=10)
+```
+
+### 🎯 Integración con Metodología de Desarrollo
+
+Estas herramientas se integran en cada fase del desarrollo:
+- **Grupo A (Infraestructura)**: Análisis de esquemas y relaciones
+- **Grupo B (Autenticación)**: Optimización de queries de filtrado jerárquico
+- **Grupo D (Productos)**: Análisis de rendimiento de consultas de carta
+- **Testing**: Identificación de queries lentas antes de producción
+
+---
