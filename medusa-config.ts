@@ -24,9 +24,7 @@ module.exports = defineConfig({
       },
       connection: {
         ssl: {
-          rejectUnauthorized: false,
-          ca: false,
-          checkServerIdentity: false
+          rejectUnauthorized: false
         }
       }
     },
