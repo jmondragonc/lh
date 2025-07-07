@@ -397,25 +397,39 @@ const UsersManagement = () => {
   }
 
   const handleRemoveRoleClick = (user: User, role: Role) => {
+    console.log('🗑️ Remove role clicked:', { user: user.email, role: role.name })
     setRoleRemovalData({ user, role })
     setShowRemoveRoleModal(true)
   }
 
   const removeRole = async () => {
-    if (!roleRemovalData) return
+    if (!roleRemovalData) {
+      console.log('❌ No role removal data')
+      return
+    }
+
+    console.log('🗑️ Starting role removal:', {
+      userId: roleRemovalData.user.id,
+      userEmail: roleRemovalData.user.email,
+      roleId: roleRemovalData.role.id,
+      roleName: roleRemovalData.role.name
+    })
 
     try {
+      const requestBody = { role_id: roleRemovalData.role.id }
+      console.log('📤 Sending DELETE request with body:', requestBody)
+      
       const response = await makeAuthenticatedRequest(`/admin/longhorn/users/${roleRemovalData.user.id}/roles`, {
         method: "DELETE",
-        body: JSON.stringify({ 
-          role_id: roleRemovalData.role.id 
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (response.ok) {
+        console.log('✅ Role removed successfully')
         showNotification("Rol removido exitosamente", "success")
         await fetchAllUserRoles() // Refresh user roles
       } else {
+        console.log('❌ Role removal failed:', response.status, response.statusText)
         const errorData = await response.json()
         
         // Manejar errores de seguridad específicos

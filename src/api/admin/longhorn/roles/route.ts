@@ -89,6 +89,15 @@ export const POST = async (
     const currentUserId = simulate_user || req.auth_context?.user_id || 'user_01JZC033F50CPV8Y1HGHDJQCJW'
     console.log('Current user ID:', currentUserId)
 
+    // Convertir tipo del frontend a tipo del modelo
+    const typeMapping = {
+      "super_admin": ROLE_TYPES.SUPER_ADMIN,
+      "local_manager": ROLE_TYPES.STORE_MANAGER,
+      "local_staff": ROLE_TYPES.STORE_STAFF
+    }
+    const modelType = typeMapping[type as string] || type
+    console.log('Converted type:', type, '->', modelType)
+
     // Verificar permisos de creación jerárquicos
     const canCreate = await longhornService.canCreateRole(currentUserId, modelType)
     console.log('Can create role?', canCreate, 'for type:', modelType)

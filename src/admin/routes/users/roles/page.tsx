@@ -209,11 +209,16 @@ const UserRolesManagement = () => {
         return
       }
 
+      // Convertir tipo del backend al formato del frontend
+      const frontendType = role.type === "SUPER_ADMIN" ? "super_admin" :
+                          role.type === "STORE_MANAGER" ? "local_manager" :
+                          role.type === "STORE_STAFF" ? "local_staff" : role.type
+
       setEditingRole(role)
       setFormData({
         name: role.name || "",
         description: role.description || "",
-        type: role.type || "local_staff",
+        type: frontendType,
         permissions: Array.isArray(role.permissions) ? role.permissions : [],
         is_active: role.is_active !== undefined ? role.is_active : true
       })
@@ -222,10 +227,28 @@ const UserRolesManagement = () => {
       console.log("🔧 EDIT DEBUG - Form data set:", {
         name: role.name || "",
         description: role.description || "",
-        type: role.type || "local_staff",
+        type: frontendType,
         permissions: Array.isArray(role.permissions) ? role.permissions : [],
         is_active: role.is_active !== undefined ? role.is_active : true
       })
+
+      // Scroll suave hacia el formulario
+      setTimeout(() => {
+        const formElement = document.querySelector('.edit-form-container')
+        if (formElement) {
+          formElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          })
+        } else {
+          // Fallback: scroll al inicio de la página
+          window.scrollTo({ 
+            top: 0, 
+            behavior: 'smooth' 
+          })
+        }
+      }, 100) // Pequeño delay para asegurar que el DOM se actualice
+
     } catch (error) {
       console.error("🔧 EDIT DEBUG - Error in handleEdit:", error)
       showNotification("Error al preparar edición del rol", "error")
@@ -313,7 +336,7 @@ const UserRolesManagement = () => {
 
       {/* Create/Edit Form - Solo visible para Super Admin */}
       {showCreateForm && !isFiltered && (
-        <div className="mb-8 p-6 border border-ui-border-base rounded-md bg-ui-bg-base shadow-card-rest">
+        <div className="mb-8 p-6 border border-ui-border-base rounded-md bg-ui-bg-base shadow-card-rest edit-form-container">
           <h2 className="text-ui-fg-base text-lg font-medium mb-4 flex items-center space-x-2">
             <Users className="w-5 h-5" />
             <span>{editingRole ? "Editar Rol" : "Crear Nuevo Rol"}</span>

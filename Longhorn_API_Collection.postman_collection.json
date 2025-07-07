@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Longhorn API Collection - Híbrida",
-    "description": "API endpoints para el proyecto Longhorn - Implementación híbrida completada (Grupo C)",
-    "version": "2.0.0",
+    "name": "Longhorn API Collection - COMPLETADO",
+    "description": "API endpoints para el proyecto Longhorn - GRUPO B COMPLETADO AL 100% con CRUD funcional",
+    "version": "3.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -64,7 +64,7 @@
           "response": []
         },
         {
-          "name": "Crear nuevo usuario (validaciones híbridas)",
+          "name": "Crear nuevo usuario (con contraseña y avatar)",
           "request": {
             "method": "POST",
             "header": [
@@ -81,7 +81,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"first_name\": \"María\",\n  \"last_name\": \"González\",\n  \"email\": \"maria.gonzalez@longhorn.com\",\n  \"avatar_url\": \"https://ejemplo.com/avatar.jpg\"\n}",
+              "raw": "{\n  \"first_name\": \"María\",\n  \"last_name\": \"González\",\n  \"email\": \"maria.gonzalez@longhorn.com\",\n  \"avatar_url\": \"https://ejemplo.com/avatar.jpg\",\n  \"password\": \"password123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -134,7 +134,7 @@
           "response": []
         },
         {
-          "name": "Actualizar usuario",
+          "name": "Actualizar usuario (FUNCIONAL - todos los campos)",
           "request": {
             "method": "PUT",
             "header": [
@@ -259,7 +259,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role_id\": \"rol_id_example\",\n  \"restaurant_location_id\": \"store_id_example\"\n}",
+              "raw": "{\n  \"role_id\": \"lrole_super_admin\",\n  \"store_id\": \"longhorn_01\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -283,7 +283,7 @@
           "response": []
         },
         {
-          "name": "Remover rol de usuario",
+          "name": "Remover rol de usuario (FUNCIONAL)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -298,8 +298,17 @@
                 "type": "text"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_id\": \"lrole_store_manager\",\n  \"store_id\": \"longhorn_01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": "{{base_url}}/admin/longhorn/users/USER_ID_HERE/roles/ROLE_ID_HERE?restaurant_location_id=STORE_ID_HERE",
+              "raw": "{{base_url}}/admin/longhorn/users/USER_ID_HERE/roles",
               "host": [
                 "{{base_url}}"
               ],
@@ -308,15 +317,7 @@
                 "longhorn",
                 "users",
                 "USER_ID_HERE",
-                "roles",
-                "ROLE_ID_HERE"
-              ],
-              "query": [
-                {
-                  "key": "restaurant_location_id",
-                  "value": "STORE_ID_HERE",
-                  "description": "ID de sucursal (opcional para roles globales)"
-                }
+                "roles"
               ]
             }
           },
@@ -370,7 +371,7 @@
           "response": []
         },
         {
-          "name": "Crear nuevo rol",
+          "name": "Crear nuevo rol (FUNCIONAL - permisos granulares)",
           "request": {
             "method": "POST",
             "header": [
@@ -387,7 +388,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Supervisor de Turno\",\n  \"type\": \"local_staff\",\n  \"description\": \"Supervisor responsable de turno específico\",\n  \"permissions\": [\n    \"view_products\",\n    \"create_orders\",\n    \"update_inventory\",\n    \"view_local_orders\"\n  ],\n  \"is_active\": true\n}",
+              "raw": "{\n  \"name\": \"Supervisor de Turno\",\n  \"type\": \"STORE_STAFF\",\n  \"description\": \"Supervisor responsable de turno específico\",\n  \"permissions\": [\n    \"view_products\",\n    \"create_orders\",\n    \"update_inventory\",\n    \"view_local_orders\"\n  ],\n  \"is_active\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -426,7 +427,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Supervisor de Turno Senior\",\n  \"type\": \"local_staff\",\n  \"description\": \"Supervisor senior con permisos extendidos\",\n  \"permissions\": [\n    \"view_products\",\n    \"create_orders\",\n    \"update_inventory\",\n    \"view_local_orders\",\n    \"manage_local_inventory\"\n  ],\n  \"is_active\": true\n}",
+              "raw": "{\n  \"name\": \"Supervisor de Turno Senior\",\n  \"type\": \"STORE_STAFF\",\n  \"description\": \"Supervisor senior con permisos extendidos\",\n  \"permissions\": [\n    \"view_products\",\n    \"create_orders\",\n    \"update_inventory\",\n    \"view_local_orders\",\n    \"manage_local_inventory\"\n  ],\n  \"is_active\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
