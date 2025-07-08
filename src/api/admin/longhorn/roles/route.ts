@@ -3,7 +3,7 @@ import {
   MedusaResponse,
 } from "@medusajs/framework";
 import { ROLE_TYPES } from "../../../../modules/longhorn/models/role";
-import type { LonghornAuthenticatedRequest } from "../../../types/longhorn-auth";
+import type { LonghornAuthenticatedRequest } from "../../../../types/longhorn-auth";
 
 export const GET = async (
   req: LonghornAuthenticatedRequest,

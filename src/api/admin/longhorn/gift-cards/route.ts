@@ -2,7 +2,7 @@ import {
   AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
-import type { LonghornAuthenticatedRequest } from "../../../types/longhorn-auth"
+import type { LonghornAuthenticatedRequest } from "../../../../types/longhorn-auth";
 import { GIFT_CARD_DELIVERY_STATUS, GIFT_CARD_TRANSACTION_TYPES } from "../../../../modules/longhorn/models"
 
 /**
