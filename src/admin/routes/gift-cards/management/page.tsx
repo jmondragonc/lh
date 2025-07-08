@@ -63,6 +63,29 @@ const GiftCardsManagementPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showDropdown]);
 
+  // Handle Escape key to close modals
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        if (showCreateModal) {
+          setShowCreateModal(false);
+        } else if (showEditModal) {
+          setShowEditModal(false);
+        } else if (showDeleteModal) {
+          handleDeleteCancel();
+        } else if (showDetailsModal) {
+          setShowDetailsModal(false);
+        }
+      }
+    };
+
+    // Only add listener if any modal is open
+    if (showCreateModal || showEditModal || showDeleteModal || showDetailsModal) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showCreateModal, showEditModal, showDeleteModal, showDetailsModal]);
+
   const showNotification = (type, message) => {
     setNotification({ show: true, type, message });
     setTimeout(() => setNotification({ show: false, type: '', message: '' }), 5000);
@@ -622,6 +645,173 @@ const GiftCardsManagementPage = () => {
                     type="button"
                     onClick={() => setShowCreateModal(false)}
                     disabled={isCreating}
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-ui-border-base shadow-sm px-4 py-2 bg-ui-bg-base text-base font-medium text-ui-fg-base hover:bg-ui-bg-subtle focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ui-border-interactive sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Gift Card Modal */}
+      {showEditModal && editForm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-ui-bg-overlay" onClick={() => setShowEditModal(false)}></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-ui-bg-base rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-ui-border-base">
+              <form onSubmit={handleEditGiftCard}>
+                <div className="bg-ui-bg-base px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg leading-6 font-medium text-ui-fg-base">Editar Gift Card</h3>
+                        <button
+                          type="button"
+                          onClick={() => setShowEditModal(false)}
+                          className="text-ui-fg-muted hover:text-ui-fg-base"
+                        >
+                          <XMark className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <p className="text-sm text-ui-fg-muted mb-6">
+                        Editar información de la gift card. Los cambios se aplicarán inmediatamente.
+                      </p>
+
+                      {editError && (
+                        <div className="mb-4 p-3 rounded-md bg-ui-bg-error border border-ui-border-error">
+                          <div className="flex">
+                            <ExclamationCircleSolid className="w-5 h-5 text-ui-fg-error mr-2" />
+                            <span className="text-sm text-ui-fg-error">{editError}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-4">
+                        <div>
+                          <label htmlFor="edit_expires_at" className="block text-sm font-medium text-ui-fg-base">
+                            Fecha de Expiración
+                          </label>
+                          <input
+                            id="edit_expires_at"
+                            type="date"
+                            value={editForm.expires_at}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, expires_at: e.target.value }))}
+                            className="mt-1 block w-full px-3 py-2 border border-ui-border-base rounded-md shadow-sm focus:outline-none focus:ring-ui-border-interactive focus:border-ui-border-interactive sm:text-sm bg-ui-bg-field text-ui-fg-base"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="edit_recipient_name" className="block text-sm font-medium text-ui-fg-base">
+                              Nombre del Destinatario
+                            </label>
+                            <input
+                              id="edit_recipient_name"
+                              type="text"
+                              placeholder="Juan Pérez"
+                              value={editForm.recipient_name}
+                              onChange={(e) => setEditForm(prev => ({ ...prev, recipient_name: e.target.value }))}
+                              className="mt-1 block w-full px-3 py-2 border border-ui-border-base rounded-md shadow-sm focus:outline-none focus:ring-ui-border-interactive focus:border-ui-border-interactive sm:text-sm bg-ui-bg-field text-ui-fg-base"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="edit_recipient_email" className="block text-sm font-medium text-ui-fg-base">
+                              Email del Destinatario
+                            </label>
+                            <input
+                              id="edit_recipient_email"
+                              type="email"
+                              placeholder="juan@example.com"
+                              value={editForm.recipient_email}
+                              onChange={(e) => setEditForm(prev => ({ ...prev, recipient_email: e.target.value }))}
+                              className="mt-1 block w-full px-3 py-2 border border-ui-border-base rounded-md shadow-sm focus:outline-none focus:ring-ui-border-interactive focus:border-ui-border-interactive sm:text-sm bg-ui-bg-field text-ui-fg-base"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label htmlFor="edit_sender_name" className="block text-sm font-medium text-ui-fg-base">
+                            Nombre del Remitente
+                          </label>
+                          <input
+                            id="edit_sender_name"
+                            type="text"
+                            placeholder="María García"
+                            value={editForm.sender_name}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, sender_name: e.target.value }))}
+                            className="mt-1 block w-full px-3 py-2 border border-ui-border-base rounded-md shadow-sm focus:outline-none focus:ring-ui-border-interactive focus:border-ui-border-interactive sm:text-sm bg-ui-bg-field text-ui-fg-base"
+                          />
+                        </div>
+
+                        <div>
+                          <label htmlFor="edit_message" className="block text-sm font-medium text-ui-fg-base">
+                            Mensaje Personal
+                          </label>
+                          <textarea
+                            id="edit_message"
+                            rows={3}
+                            placeholder="¡Feliz cumpleaños! Disfruta esta gift card."
+                            value={editForm.message}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, message: e.target.value }))}
+                            className="mt-1 block w-full px-3 py-2 border border-ui-border-base rounded-md shadow-sm focus:outline-none focus:ring-ui-border-interactive focus:border-ui-border-interactive sm:text-sm bg-ui-bg-field text-ui-fg-base"
+                          ></textarea>
+                        </div>
+
+                        <div>
+                          <label htmlFor="edit_notes" className="block text-sm font-medium text-ui-fg-base">
+                            Notas Administrativas
+                          </label>
+                          <textarea
+                            id="edit_notes"
+                            rows={2}
+                            placeholder="Notas internas sobre la gift card..."
+                            value={editForm.notes}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+                            className="mt-1 block w-full px-3 py-2 border border-ui-border-base rounded-md shadow-sm focus:outline-none focus:ring-ui-border-interactive focus:border-ui-border-interactive sm:text-sm bg-ui-bg-field text-ui-fg-base"
+                          ></textarea>
+                        </div>
+
+                        <div className="flex items-center">
+                          <input
+                            id="edit_is_active"
+                            type="checkbox"
+                            checked={editForm.is_active}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                            className="h-4 w-4 text-ui-button-primary focus:ring-ui-border-interactive border-ui-border-base rounded"
+                          />
+                          <label htmlFor="edit_is_active" className="ml-2 block text-sm text-ui-fg-base">
+                            Gift card activa
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-ui-bg-subtle px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  <button
+                    type="submit"
+                    disabled={isEditing}
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-ui-button-primary text-base font-medium text-ui-fg-on-color hover:bg-ui-button-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ui-border-interactive sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isEditing ? (
+                      <>
+                        <ArrowPath className="w-4 h-4 animate-spin mr-2" />
+                        Guardando...
+                      </>
+                    ) : (
+                      'Guardar Cambios'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    disabled={isEditing}
                     className="mt-3 w-full inline-flex justify-center rounded-md border border-ui-border-base shadow-sm px-4 py-2 bg-ui-bg-base text-base font-medium text-ui-fg-base hover:bg-ui-bg-subtle focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ui-border-interactive sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancelar
