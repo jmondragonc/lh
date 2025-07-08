@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Longhorn API Collection - Híbrida",
-    "description": "API endpoints para el proyecto Longhorn - Implementación híbrida completada (Grupo C)",
-    "version": "2.0.0",
+    "name": "Longhorn API Collection - Gift Cards Integrada",
+    "description": "API endpoints para el proyecto Longhorn - Sistema completo con Gift Cards (Grupo C completado)",
+    "version": "2.1.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -14,6 +14,11 @@
     {
       "key": "admin_token",
       "value": "YOUR_ADMIN_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "gift_card_id",
+      "value": "GIFT_CARD_ID_HERE",
       "type": "string"
     }
   ],
@@ -744,13 +749,337 @@
                 "# - view_products",
                 "# - create_orders",
                 "# - update_inventory",
-                "# - view_local_orders"
-              ]
-            }
-          },
-          "response": []
-        }
+        "# - view_local_orders"
       ]
+    }
+  ]
+},{
+  "name": "Gestión de Gift Cards",
+  "item": [
+    {
+      "name": "Crear Gift Card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": \"XMAS2025ABC\",\n  \"initial_value\": 100,\n  \"currency\": \"USD\",\n  \"expiration_date\": \"2025-12-31T23:59:59\",\n  \"notes\": \"Festive Gift\",\n  \"sender_name\": \"Admin\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener lista de Gift Cards",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener Gift Card por ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/{{gift_card_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "{{gift_card_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Actualizar Gift Card",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"notes\": \"Updated Notes\",\n  \"sender_name\": \"New Admin\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/{{gift_card_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "{{gift_card_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Eliminar Gift Card",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/{{gift_card_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "{{gift_card_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Buscar Gift Card por Código",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/lookup?code=XMAS2025ABC",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "lookup"
+          ],
+          "query": [
+            {
+              "key": "code",
+              "value": "XMAS2025ABC",
+              "description": "Código de la gift card a buscar"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener Estadísticas de Gift Cards",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/stats",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "stats"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generar Código Único",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prefix\": \"XMAS\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/generate-code",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "generate-code"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear Transacción (Redención)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"transaction_type\": \"redemption\",\n  \"amount\": 25,\n  \"description\": \"Purchase redeeming gift card\",\n  \"order_id\": \"order_123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/{{gift_card_id}}/transactions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "{{gift_card_id}}",
+            "transactions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener Transacciones de Gift Card",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/{{gift_card_id}}/transactions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "{{gift_card_id}}",
+            "transactions"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
     }
   ]
 }

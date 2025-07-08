@@ -7,9 +7,14 @@ import LonghornStoreProduct from "./models/store-product"
 import LonghornMenuCategory from "./models/menu-category"
 import LonghornMenuItem from "./models/menu-item"
 import LonghornStoreMenuItem from "./models/store-menu-item"
+import LonghornGiftCard from "./models/gift-card"
+import LonghornGiftCardTransaction from "./models/gift-card-transaction"
 import { ROLE_TYPES, RoleType } from "./models/role"
 import { MENU_CATEGORY_TYPES } from "./models/menu-category"
 import { DISH_TYPES, COOKING_POINTS, SPICE_LEVELS } from "./models/menu-item"
+import { GIFT_CARD_DELIVERY_STATUS } from "./models/gift-card"
+import { GIFT_CARD_TRANSACTION_TYPES } from "./models/gift-card-transaction"
+import type { GiftCardDeliveryStatus, GiftCardTransactionType } from "./models"
 
 /**
  * Servicio principal del módulo Longhorn
@@ -22,6 +27,8 @@ import { DISH_TYPES, COOKING_POINTS, SPICE_LEVELS } from "./models/menu-item"
  * - Categorías de Menú (LonghornMenuCategory)
  * - Items de Menú (LonghornMenuItem)
  * - Items de Menú por Tienda (LonghornStoreMenuItem)
+ * - Gift Cards (LonghornGiftCard)
+ * - Transacciones de Gift Cards (LonghornGiftCardTransaction)
  */
 class LonghornModuleService extends MedusaService({
   LonghornRole,
@@ -32,6 +39,8 @@ class LonghornModuleService extends MedusaService({
   LonghornMenuCategory,
   LonghornMenuItem,
   LonghornStoreMenuItem,
+  LonghornGiftCard,
+  LonghornGiftCardTransaction,
 }) {
 
   // ======= MÉTODOS DE ROLES =======
@@ -1249,6 +1258,281 @@ class LonghornModuleService extends MedusaService({
     }
 
     return []
+  }
+
+  // ======= MÉTODOS DE GIFT CARDS =======
+
+  async createGiftCard(data: {
+    user_id?: string
+    code: string
+    initial_value: number | string
+    currency?: string
+    expiration_date?: Date | string
+    customer_id?: string
+    order_id?: string
+    notes?: string
+    sender_name?: string
+    recipient_name?: string
+    recipient_email?: string
+    message?: string
+    delivery_status?: GiftCardDeliveryStatus
+    metadata?: Record<string, any>
+  }) {
+    // Verificar que el código sea único
+    const existingGiftCards = await this.listLonghornGiftCards({
+      code: data.code,
+      deleted_at: null
+    })
+
+    if (existingGiftCards.length > 0) {
+      throw new Error(`Gift card with code ${data.code} already exists`)
+    }
+
+    const giftCardData = {
+      currency: "PEN",
+      delivery_status: GIFT_CARD_DELIVERY_STATUS.PENDING,
+      balance: data.initial_value, // Balance inicial igual al valor inicial
+      is_active: true,
+      is_redeemed: false,
+      ...data
+    }
+
+    const createdGiftCards = await this.createLonghornGiftCards([giftCardData])
+    return createdGiftCards[0]
+  }
+
+  async getGiftCardByCode(code: string) {
+    const giftCards = await this.listLonghornGiftCards({
+      code,
+      deleted_at: null
+    })
+    return giftCards[0] || null
+  }
+
+  async getActiveGiftCards(user_id?: string) {
+    const filters: any = {
+      is_active: true,
+      deleted_at: null
+    }
+    
+    if (user_id) {
+      filters.user_id = user_id
+    }
+    
+    return await this.listLonghornGiftCards(filters)
+  }
+
+  async getGiftCardsByCustomer(customer_id: string) {
+    return await this.listLonghornGiftCards({
+      customer_id,
+      deleted_at: null
+    })
+  }
+
+  async updateGiftCard(id: string, data: {
+    is_active?: boolean
+    expiration_date?: Date | string
+    notes?: string
+    sender_name?: string
+    recipient_name?: string
+    recipient_email?: string
+    message?: string
+    delivery_status?: GiftCardDeliveryStatus
+    metadata?: Record<string, any>
+  }) {
+    const updatedGiftCards = await this.updateLonghornGiftCards([{ id, ...data }])
+    return updatedGiftCards[0]
+  }
+
+  async deactivateGiftCard(id: string) {
+    const updatedGiftCards = await this.updateLonghornGiftCards([{
+      id,
+      is_active: false
+    }])
+    return updatedGiftCards[0]
+  }
+
+  async deleteGiftCard(id: string) {
+    return await this.deleteLonghornGiftCards([id])
+  }
+
+  // ======= MÉTODOS DE TRANSACCIONES DE GIFT CARDS =======
+
+  async createGiftCardTransaction(data: {
+    gift_card_id: string
+    transaction_type: GiftCardTransactionType
+    amount: number | string
+    balance_before: number | string
+    balance_after: number | string
+    user_id?: string
+    customer_id?: string
+    order_id?: string
+    reference_id?: string
+    description?: string
+    notes?: string
+    processed_at?: Date | string
+    metadata?: Record<string, any>
+  }) {
+    const transactionData = {
+      processed_at: new Date(),
+      ...data
+    }
+
+    const createdTransactions = await this.createLonghornGiftCardTransactions([transactionData])
+    return createdTransactions[0]
+  }
+
+  async getGiftCardTransactions(gift_card_id: string, transaction_type?: GiftCardTransactionType) {
+    const filters: any = {
+      gift_card_id,
+      deleted_at: null
+    }
+    
+    if (transaction_type) {
+      filters.transaction_type = transaction_type
+    }
+    
+    return await this.listLonghornGiftCardTransactions(filters)
+  }
+
+  async getTransactionsByUser(user_id: string) {
+    return await this.listLonghornGiftCardTransactions({
+      user_id,
+      deleted_at: null
+    })
+  }
+
+  async getTransactionsByCustomer(customer_id: string) {
+    return await this.listLonghornGiftCardTransactions({
+      customer_id,
+      deleted_at: null
+    })
+  }
+
+  /**
+   * Realizar una redención de gift card
+   * Verifica saldo y crea la transacción automáticamente
+   */
+  async redeemGiftCard(data: {
+    gift_card_id: string
+    amount: number
+    user_id?: string
+    customer_id?: string
+    order_id?: string
+    description?: string
+    notes?: string
+  }) {
+    // Obtener gift card actual
+    const giftCards = await this.listLonghornGiftCards({
+      id: data.gift_card_id,
+      deleted_at: null
+    })
+
+    if (giftCards.length === 0) {
+      throw new Error("Gift card not found")
+    }
+
+    const giftCard = giftCards[0]
+
+    if (!giftCard.is_active) {
+      throw new Error("Gift card is not active")
+    }
+
+    const currentBalance = parseFloat(giftCard.balance)
+    const redeemAmount = parseFloat(data.amount.toString())
+
+    if (currentBalance < redeemAmount) {
+      throw new Error("Insufficient balance on gift card")
+    }
+
+    const newBalance = currentBalance - redeemAmount
+
+    // Crear transacción
+    const transaction = await this.createGiftCardTransaction({
+      gift_card_id: data.gift_card_id,
+      transaction_type: GIFT_CARD_TRANSACTION_TYPES.REDEMPTION,
+      amount: redeemAmount,
+      balance_before: currentBalance,
+      balance_after: newBalance,
+      user_id: data.user_id,
+      customer_id: data.customer_id,
+      order_id: data.order_id,
+      description: data.description || "Gift card redemption",
+      notes: data.notes
+    })
+
+    // Actualizar gift card
+    const giftCardUpdates: any = {
+      balance: newBalance
+    }
+
+    if (newBalance <= 0) {
+      giftCardUpdates.is_redeemed = true
+      giftCardUpdates.used_at = new Date()
+    }
+
+    const updatedGiftCard = await this.updateGiftCard(data.gift_card_id, giftCardUpdates)
+
+    return {
+      transaction,
+      gift_card: updatedGiftCard,
+      new_balance: newBalance
+    }
+  }
+
+  /**
+   * Generar código único para gift card
+   */
+  async generateUniqueGiftCardCode(prefix: string = "GIFT"): Promise<string> {
+    let attempts = 0
+    const maxAttempts = 10
+
+    while (attempts < maxAttempts) {
+      // Generar código aleatorio
+      const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase()
+      const code = `${prefix}${randomPart}`
+
+      // Verificar que no existe
+      const existing = await this.getGiftCardByCode(code)
+      if (!existing) {
+        return code
+      }
+
+      attempts++
+    }
+
+    throw new Error("Unable to generate unique gift card code")
+  }
+
+  /**
+   * Obtener estadísticas de gift cards
+   */
+  async getGiftCardStats(user_id?: string) {
+    const filters: any = {
+      deleted_at: null
+    }
+    
+    if (user_id) {
+      filters.user_id = user_id
+    }
+
+    const allGiftCards = await this.listLonghornGiftCards(filters)
+    const activeGiftCards = allGiftCards.filter(gc => gc.is_active)
+    const redeemedGiftCards = allGiftCards.filter(gc => gc.is_redeemed)
+    
+    const totalValue = allGiftCards.reduce((sum, gc) => sum + parseFloat(gc.initial_value), 0)
+    const totalBalance = activeGiftCards.reduce((sum, gc) => sum + parseFloat(gc.balance), 0)
+    const totalRedeemed = redeemedGiftCards.reduce((sum, gc) => sum + parseFloat(gc.initial_value), 0)
+
+    return {
+      total_gift_cards: allGiftCards.length,
+      active_gift_cards: activeGiftCards.length,
+      redeemed_gift_cards: redeemedGiftCards.length,
+      total_value: totalValue,
+      total_balance: totalBalance,
+      total_redeemed: totalRedeemed,
+      redemption_rate: allGiftCards.length > 0 ? (redeemedGiftCards.length / allGiftCards.length) * 100 : 0
+    }
   }
 }
 

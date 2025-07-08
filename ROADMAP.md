@@ -124,7 +124,7 @@ Cliente → Selecciona Sede → Ve Menú Local → Hace Pedido → Delivery desd
 - **Carta por Local**
   - Selección de productos de la carta general
   - Precios específicos por ubicación
-  - Disponibilidad en tiempo real
+  - Disponibilidad en vivo
   - Gestión de fotos y descripciones locales
 
 - **Inventory Management**
@@ -163,12 +163,12 @@ Cliente → Selecciona Sede → Ve Menú Local → Hace Pedido → Delivery desd
 - **Horarios Diferenciados**
   - Horarios de atención por sede
   - Horarios especiales (feriados, eventos)
-  - Configuración de tiempo de preparación
+  - Configuración de preparación
   
 - **Seguimiento de Pedidos**
-  - Estados de pedido en tiempo real
+  - Estados de pedido en vivo
   - Notificaciones al cliente
-  - Estimación de tiempo de entrega
+  - Estimación de entrega
 
 #### **🎯 Entregables:**
 - [ ] Sistema de zonas configurables por mapa
@@ -297,15 +297,15 @@ Cliente → Selecciona Sede → Ve Menú Local → Hace Pedido → Delivery desd
 ## 📊 MÉTRICAS DE ÉXITO
 
 ### **🎯 KPIs Técnicos**
-- **Tiempo de respuesta API**: < 200ms promedio
+- **Respuesta API**: < 200ms promedio
 - **Disponibilidad del sistema**: 99.9% uptime
 - **Cobertura de testing**: > 80%
-- **Tiempo de deployment**: < 5 minutos
+- **Deployment**: < 5 minutos
 - **Zero downtime** en actualizaciones
 
 ### **📈 KPIs de Negocio**
-- **Tiempo de onboarding** nueva sede: < 1 día
-- **Eficiencia operativa**: Reducción 50% tiempo gestión menús
+- **Onboarding** nueva sede: < 1 día
+- **Eficiencia operativa**: Reducción 50% en gestión menús
 - **Satisfacción de usuarios**: > 4.5/5 en panel admin
 - **Escalabilidad**: Soporte para 50+ sedes simultáneas
 - **ROI del proyecto**: Positivo en 6 meses

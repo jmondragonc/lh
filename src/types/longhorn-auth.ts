@@ -1,4 +1,4 @@
-import type { MedusaRequest } from "@medusajs/framework/http"
+import type { MedusaRequest } from "@medusajs/framework"
 
 // Tipos para el middleware de autenticación de Longhorn
 export interface LonghornAuthInfo {

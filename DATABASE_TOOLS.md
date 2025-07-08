@@ -178,7 +178,7 @@ analyze_db_health(health_type="connection")
 
 ### 5. **Identificación de Consultas Problemáticas**
 ```bash
-# Top 10 consultas por tiempo total
+# Top 10 consultas por duración total
 get_top_queries(sort_by="total_time", limit=10)
 
 # Consultas que más recursos consumen
@@ -220,7 +220,7 @@ get_top_queries(sort_by="resources", limit=5)
 - **Mensual**: `analyze_workload_indexes` para optimización global
 
 ### **Umbrales de Alerta**
-- Consultas > 1000ms de tiempo promedio
+- Consultas > 1000ms de duración promedio
 - Índices bloated > 20% del tamaño de tabla
 - Buffer cache hit rate < 95%
 - Conexiones activas > 80% del máximo

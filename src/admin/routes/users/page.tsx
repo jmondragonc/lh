@@ -147,7 +147,7 @@ const UsuariosMainPage = () => {
           <h3 className="text-ui-fg-base text-lg font-medium mb-4">Acciones Rápidas</h3>
           <div className="space-y-3">
             <a 
-              href="/admin/users/management"
+              href="/app/users/management"
               className="flex items-center justify-between p-3 border border-ui-border-base rounded-md hover:bg-ui-bg-subtle transition-colors"
             >
               <div className="flex items-center space-x-3">
@@ -165,7 +165,7 @@ const UsuariosMainPage = () => {
             </a>
 
             <a 
-              href="/admin/users/roles"
+              href="/app/users/roles"
               className="flex items-center justify-between p-3 border border-ui-border-base rounded-md hover:bg-ui-bg-subtle transition-colors"
             >
               <div className="flex items-center space-x-3">
