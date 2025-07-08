@@ -18,6 +18,19 @@ export const POST = async (
     
     const longhornService = req.scope.resolve("longhorn")
     
+    const requestBody = req.body as {
+      amount: number
+      currency?: string
+      recipient_email: string
+      recipient_name?: string
+      sender_name: string
+      sender_email: string
+      message?: string
+      delivery_date?: string | Date
+      payment_method?: string
+      customer_info?: Record<string, any>
+    }
+    
     const {
       amount,
       currency = "PEN",
@@ -29,7 +42,7 @@ export const POST = async (
       delivery_date,
       payment_method,
       customer_info
-    } = req.body
+    } = requestBody
     
     // Validaciones básicas
     if (!amount || !recipient_email || !sender_name || !sender_email) {
@@ -155,7 +168,7 @@ export const POST = async (
       
       // 3. Simular integración con servicio de pagos
       // En producción, aquí se integraría con Stripe, PayU, etc.
-      let paymentIntentId = null
+      let paymentIntentId: string | null = null
       let paymentStatus = 'pending'
       
       if (payment_method === 'stripe') {
@@ -193,7 +206,7 @@ export const POST = async (
         gift_card: {
           id: giftCardId,
           code: giftCardCode,
-          amount: parseFloat(amount),
+          amount: typeof amount === 'string' ? parseFloat(amount) : amount,
           currency,
           expires_at: expirationDate.toISOString(),
           status: 'pending_payment'
@@ -201,7 +214,7 @@ export const POST = async (
         payment: {
           status: paymentStatus,
           payment_intent_id: paymentIntentId,
-          amount: parseFloat(amount),
+          amount: typeof amount === 'string' ? parseFloat(amount) : amount,
           currency,
           // En producción, incluir datos del payment provider
           client_secret: paymentIntentId ? `${paymentIntentId}_secret_${Math.random().toString(36).substring(2, 8)}` : null

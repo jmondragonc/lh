@@ -8,7 +8,7 @@ const LonghornUserRole = model.define("LonghornUserRole", {
   is_active: model.boolean().default(true),
   metadata: model.json().nullable(),
 }).cascades({
-  delete: ["longhornRole", "longhornStore"]
+  // delete: ["longhornRole", "longhornStore"] // Comentado hasta resolver relaciones
 })
 
 export default LonghornUserRole

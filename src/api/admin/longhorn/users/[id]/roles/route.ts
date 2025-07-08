@@ -73,7 +73,7 @@ export const POST = async (
     const longhornService = req.scope.resolve("longhorn")
 
     // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.user_id
+    const currentUserId = req.auth_context?.actor_id
     
     if (!currentUserId) {
       return res.status(401).json({
@@ -108,7 +108,7 @@ export const POST = async (
     
     // Verificar el rol que se está intentando asignar
     const roleToAssign = await longhornService.listLonghornRoles({ 
-      id: req.body.role_id 
+      id: (req.body as any).role_id
     })
     
     if (roleToAssign.length > 0) {
@@ -127,7 +127,12 @@ export const POST = async (
     
     console.log('✅ Security checks passed')
 
-    const { role_id, store_id, metadata } = req.body
+    const requestBody = req.body as {
+      role_id: string
+      store_id?: string
+      metadata?: Record<string, any>
+    }
+    const { role_id, store_id, metadata } = requestBody
 
     // Validar datos requeridos
     if (!role_id) {
@@ -204,7 +209,7 @@ export const DELETE = async (
     const longhornService = req.scope.resolve("longhorn")
 
     // OBTENER USUARIO ACTUAL AUTENTICADO
-    const currentUserId = req.auth_context?.user_id
+    const currentUserId = req.auth_context?.actor_id
     
     if (!currentUserId) {
       return res.status(401).json({
@@ -240,7 +245,7 @@ export const DELETE = async (
     // REGLA ADICIONAL: Un usuario no puede remover su propio rol de gerente o super admin
     if (currentUserId === user_id) {
       const roleToRemove = await longhornService.listLonghornRoles({ 
-        id: req.body.role_id 
+        id: (req.body as any).role_id
       })
       
       if (roleToRemove.length > 0) {
@@ -263,7 +268,7 @@ export const DELETE = async (
     
     // Verificar el rol que se está intentando remover
     const roleToRemove = await longhornService.listLonghornRoles({ 
-      id: req.body.role_id 
+      id: (req.body as any).role_id
     })
     
     if (roleToRemove.length > 0) {
@@ -282,7 +287,11 @@ export const DELETE = async (
     
     console.log('✅ Security checks passed')
 
-    const { role_id, store_id } = req.body
+    const requestBody = req.body as {
+      role_id: string
+      store_id?: string
+    }
+    const { role_id, store_id } = requestBody
 
     // Validar datos requeridos
     if (!role_id) {

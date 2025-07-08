@@ -859,9 +859,10 @@ export default async function seedDemoData({ container }: ExecArgs) {
   // Seed Longhorn data
   logger.info("Seeding Longhorn data...");
   try {
-    const longhornSeed = await import("./longhorn-seed");
-    await longhornSeed.default(container);
-    logger.info("Finished seeding Longhorn data.");
+    // Temporarily disabled until longhorn-seed is fixed
+    // const { default: longhornSeed } = await import("./longhorn-seed.js");
+    // await longhornSeed(container);
+    logger.info("Finished seeding Longhorn data (temporarily disabled).");
   } catch (error) {
     logger.error("Error seeding Longhorn data:", error);
   }

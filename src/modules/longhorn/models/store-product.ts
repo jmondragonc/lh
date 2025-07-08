@@ -9,7 +9,7 @@ const LonghornStoreProduct = model.define("LonghornStoreProduct", {
   store_specific_settings: model.json().nullable(),
   metadata: model.json().nullable(),
 }).cascades({
-  delete: ["longhornStore"]
+  // delete: ["longhornStore"] // Comentado hasta resolver relaciones
 })
 
 export default LonghornStoreProduct

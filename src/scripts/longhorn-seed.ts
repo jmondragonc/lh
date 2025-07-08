@@ -49,7 +49,7 @@ console.log("👥 Creando usuarios de prueba...")
       }
     ]
 
-    const createdUsers = []
+    const createdUsers: any[] = []
     const allRoles = await longhornService.getAllRoles()
     
     for (const userData of testUsers) {
@@ -118,9 +118,10 @@ console.log("👥 Creando usuarios de prueba...")
         
         createdUsers.push({
           ...createdUser,
-          role: targetRole?.name,
-          auth_identity_id: authIdentity.id
-        })
+          role: targetRole?.name || 'Sin rol',
+          auth_identity_id: authIdentity.id,
+          email: createdUser.email // Asegurar que email esté presente
+        } as any)
         
       } catch (error) {
         console.error(`    ❌ Error creando usuario ${userData.email}:`, error.message)
@@ -128,12 +129,12 @@ console.log("👥 Creando usuarios de prueba...")
     }
 
     // 4. Mostrar resumen
-    const allRoles = await longhornService.getActiveRoles()
+    const activeRoles = await longhornService.getActiveRoles()
     const allStores = await longhornService.getActiveStores()
 
     console.log("\n📊 Resumen del seeding:")
-    console.log(`Roles creados: ${allRoles.length}`)
-    allRoles.forEach(role => {
+    console.log(`Roles creados: ${activeRoles.length}`)
+    activeRoles.forEach(role => {
       console.log(`  - ${role.name} (${role.type})`)
     })
 

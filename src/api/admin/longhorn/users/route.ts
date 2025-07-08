@@ -17,7 +17,13 @@ export const GET = async (
     const { simulate_user } = req.query;
 
     // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
-    const currentUserId = req.longhornAuth.userId;
+    const currentUserId = req.longhornAuth?.userId;
+    
+    if (!currentUserId || !req.longhornAuth) {
+      return res.status(401).json({
+        message: "Authentication required"
+      })
+    }
 
     // Solo permitir simulate_user en desarrollo (ya validado por middleware)
     const finalUserId =
@@ -233,7 +239,14 @@ export const POST = async (
     // console.log("=== STARTING POST /admin/longhorn/users ===");
     // console.log("Request body:", req.body);
 
-    const { email, password, first_name, last_name, avatar_url } = req.body;
+    const requestBody = req.body as {
+      email: string
+      password: string
+      first_name?: string
+      last_name?: string
+      avatar_url?: string
+    }
+    const { email, password, first_name, last_name, avatar_url } = requestBody;
 
     // Validaciones básicas
     if (!email || !password) {
@@ -250,7 +263,7 @@ export const POST = async (
     //console.log("Step 1: Creating auth identity...");
     const authData = {
       url: req.url,
-      headers: req.headers,
+      headers: req.headers as Record<string, string>,
       query: req.query,
       body: { email, password },
       protocol: req.protocol,
@@ -258,7 +271,7 @@ export const POST = async (
 
     const { success, error, authIdentity } = await authModuleService.register(
       "emailpass",
-      authData
+      authData as any
     );
 
     if (!success || !authIdentity) {

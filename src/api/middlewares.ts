@@ -13,7 +13,7 @@ const validateLonghornAuth = async (
 ) => {
   try {
     // Verificar que tenemos un contexto de autenticación válido
-    const authContext = req.auth_context;
+    const authContext = (req as any).auth_context;
 
     if (!authContext) {
       //console.error('🚨 SECURITY: Missing auth_context in Longhorn endpoint')

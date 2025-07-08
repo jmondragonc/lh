@@ -3,7 +3,7 @@ import {
   MedusaResponse
 } from "@medusajs/framework"
 import { ROLE_TYPES } from "../../../../../modules/longhorn/models/role"
-import type { LonghornAuthenticatedRequest } from "../../../../types/longhorn-auth"
+import type { LonghornAuthenticatedRequest, LonghornUpdateRoleRequest } from "../../../../../types/longhorn-request-types"
 
 export const GET = async (
   req: LonghornAuthenticatedRequest,
@@ -14,7 +14,7 @@ export const GET = async (
     const { id } = req.params
 
     // Usuario autenticado por middleware seguro
-    console.log('✅ Authenticated user ID del middleware:', req.longhornAuth.userId)
+    console.log('✅ Authenticated user ID del middleware:', req.longhornAuth?.userId)
 
     const roles = await longhornService.listLonghornRoles({ 
       id, 
@@ -53,19 +53,17 @@ export const GET = async (
 }
 
 export const PUT = async (
-  req: LonghornAuthenticatedRequest,
+  req: LonghornUpdateRoleRequest,
   res: MedusaResponse
 ) => {
   try {
     const longhornService = req.scope.resolve("longhorn")
     const { id } = req.params
+    
+    // Usuario autenticado por middleware seguro
+    const currentUserId = req.longhornAuth?.userId
+    
     const { name, type, description, permissions, is_active } = req.body
-
-    console.log("=== EDICIÓN DE ROL CON VERIFICACIÓN JERÁRQUICA ===")
-    console.log("Request:", { id, name, type, description })
-
-    // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
-    const currentUserId = req.longhornAuth.userId
 
     // Verificar que el rol existe
     const existingRoles = await longhornService.listLonghornRoles({ 
@@ -199,7 +197,7 @@ export const DELETE = async (
     console.log("Request:", { id })
 
     // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
-    const currentUserId = req.longhornAuth.userId
+    const currentUserId = req.longhornAuth?.userId
 
     // Verificar que el rol existe
     const existingRoles = await longhornService.listLonghornRoles({ 

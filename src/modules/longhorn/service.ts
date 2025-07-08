@@ -16,6 +16,39 @@ import { GIFT_CARD_DELIVERY_STATUS } from "./models/gift-card";
 import { GIFT_CARD_TRANSACTION_TYPES } from "./models/gift-card-transaction";
 import type { GiftCardDeliveryStatus, GiftCardTransactionType } from "./models";
 
+// Funciones de validación para tipos enum
+function validateMenuCategoryType(type: string): keyof typeof MENU_CATEGORY_TYPES {
+  if (Object.values(MENU_CATEGORY_TYPES).includes(type as any)) {
+    return type as keyof typeof MENU_CATEGORY_TYPES;
+  }
+  throw new Error(`Invalid menu category type: ${type}`);
+}
+
+function validateDishType(dishType: string): keyof typeof DISH_TYPES {
+  if (Object.values(DISH_TYPES).includes(dishType as any)) {
+    return dishType as keyof typeof DISH_TYPES;
+  }
+  throw new Error(`Invalid dish type: ${dishType}`);
+}
+
+// Función para convertir arrays a JSON si es necesario
+function ensureJsonField(value: any): Record<string, unknown> | null {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) {
+    return { items: value };
+  }
+  if (typeof value === 'object') {
+    return value;
+  }
+  return { value };
+}
+
+// Función para manejar parseFloat seguro
+function safeParseFloat(value: number | string): number {
+  if (typeof value === 'number') return value;
+  return parseFloat(value.toString());
+}
+
 /**
  * Servicio principal del módulo Longhorn
  * Este servicio maneja todos los modelos del sistema:
@@ -521,7 +554,7 @@ class LonghornModuleService extends MedusaService({
   }
 
   async bulkAssignProducts(store_id: string, product_ids: string[]) {
-    const assignments = [];
+    const assignments: any[] = [];
 
     for (const product_id of product_ids) {
       try {
@@ -871,6 +904,7 @@ class LonghornModuleService extends MedusaService({
       is_active: true,
       display_order: 0,
       ...data,
+      type: validateMenuCategoryType(data.type), // Validar y convertir tipo
     };
 
     const createdCategories = await this.createLonghornMenuCategories([
@@ -915,8 +949,15 @@ class LonghornModuleService extends MedusaService({
       metadata?: Record<string, any>;
     }
   ) {
+    const updateData: any = { ...data };
+    
+    // Validar tipo si se proporciona
+    if (data.type) {
+      updateData.type = validateMenuCategoryType(data.type);
+    }
+    
     const updatedCategories = await this.updateLonghornMenuCategories([
-      { id, ...data },
+      { id, ...updateData },
     ]);
     return updatedCategories[0];
   }
@@ -969,9 +1010,14 @@ class LonghornModuleService extends MedusaService({
       is_gluten_free: false,
       display_order: 0,
       ...data,
+      dish_type: validateDishType(data.dish_type), // Validar y convertir tipo
+      ingredients: data.ingredients ? JSON.stringify(data.ingredients) : null,
+      allergens: data.allergens ? JSON.stringify(data.allergens) : null,
+      cooking_points_available: data.cooking_points_available ? JSON.stringify(data.cooking_points_available) : null,
+      gallery_urls: data.gallery_urls ? JSON.stringify(data.gallery_urls) : null,
     };
 
-    const createdItems = await this.createLonghornMenuItems([itemData]);
+    const createdItems = await this.createLonghornMenuItems([itemData as any]);
     return createdItems[0];
   }
 
@@ -1047,7 +1093,14 @@ class LonghornModuleService extends MedusaService({
       metadata?: Record<string, any>;
     }
   ) {
-    const updatedItems = await this.updateLonghornMenuItems([{ id, ...data }]);
+    const updateData: any = { ...data };
+    
+    // Validar dish_type si se proporciona
+    if (data.dish_type) {
+      updateData.dish_type = validateDishType(data.dish_type);
+    }
+    
+    const updatedItems = await this.updateLonghornMenuItems([{ id, ...updateData }]);
     return updatedItems[0];
   }
 
@@ -1094,10 +1147,11 @@ class LonghornModuleService extends MedusaService({
       is_featured: false,
       times_ordered: 0,
       ...data,
+      unavailable_dates: ensureJsonField(data.unavailable_dates), // Convertir a JSON
     };
 
     const createdStoreMenuItems = await this.createLonghornStoreMenuItems([
-      storeMenuItemData,
+      storeMenuItemData as any,
     ]);
     return createdStoreMenuItems[0];
   }
@@ -1193,11 +1247,18 @@ class LonghornModuleService extends MedusaService({
       throw new Error(`Store menu item assignment not found`);
     }
 
+    const updateData: any = { ...data };
+    
+    // Convertir unavailable_dates a JSON si se proporciona
+    if (data.unavailable_dates !== undefined) {
+      updateData.unavailable_dates = ensureJsonField(data.unavailable_dates);
+    }
+
     const updatedStoreMenuItems = await this.updateLonghornStoreMenuItems([
       {
         id: storeMenuItems[0].id,
-        ...data,
-      },
+        ...updateData,
+      } as any,
     ]);
     return updatedStoreMenuItems[0];
   }
@@ -1240,7 +1301,7 @@ class LonghornModuleService extends MedusaService({
           store_id,
           menu_item_id,
         });
-        assignments.push(assignment);
+        (assignments as any[]).push(assignment);
       } catch (error) {
         // Skip if already assigned
         console.warn(
@@ -1379,7 +1440,7 @@ class LonghornModuleService extends MedusaService({
       const createdStores = [];
       for (const storeData of defaultStores) {
         const store = await this.createStore(storeData);
-        createdStores.push(store);
+        (createdStores as any[]).push(store);
       }
 
       return createdStores;
@@ -1419,13 +1480,14 @@ class LonghornModuleService extends MedusaService({
     const giftCardData = {
       currency: "PEN",
       delivery_status: GIFT_CARD_DELIVERY_STATUS.PENDING,
-      balance: data.initial_value, // Balance inicial igual al valor inicial
+      balance: typeof data.initial_value === 'string' ? parseFloat(data.initial_value) : data.initial_value, // Balance inicial igual al valor inicial
       is_active: true,
       is_redeemed: false,
       ...data,
+      initial_value: typeof data.initial_value === 'string' ? parseFloat(data.initial_value) : data.initial_value,
     };
 
-    const createdGiftCards = await this.createLonghornGiftCards([giftCardData]);
+    const createdGiftCards = await this.createLonghornGiftCards([giftCardData as any]);
     return createdGiftCards[0];
   }
 
@@ -1472,7 +1534,7 @@ class LonghornModuleService extends MedusaService({
     }
   ) {
     const updatedGiftCards = await this.updateLonghornGiftCards([
-      { id, ...data },
+      { id, ...data } as any,
     ]);
     return updatedGiftCards[0];
   }
@@ -1511,10 +1573,13 @@ class LonghornModuleService extends MedusaService({
     const transactionData = {
       processed_at: new Date(),
       ...data,
+      amount: typeof data.amount === 'string' ? parseFloat(data.amount) : data.amount,
+      balance_before: typeof data.balance_before === 'string' ? parseFloat(data.balance_before) : data.balance_before,
+      balance_after: typeof data.balance_after === 'string' ? parseFloat(data.balance_after) : data.balance_after,
     };
 
     const createdTransactions = await this.createLonghornGiftCardTransactions([
-      transactionData,
+      transactionData as any,
     ]);
     return createdTransactions[0];
   }
@@ -1578,7 +1643,7 @@ class LonghornModuleService extends MedusaService({
       throw new Error("Gift card is not active");
     }
 
-    const currentBalance = parseFloat(giftCard.balance);
+    const currentBalance = parseFloat(giftCard.balance.toString());
     const redeemAmount = parseFloat(data.amount.toString());
 
     if (currentBalance < redeemAmount) {
@@ -1667,15 +1732,15 @@ class LonghornModuleService extends MedusaService({
     const redeemedGiftCards = allGiftCards.filter((gc) => gc.is_redeemed);
 
     const totalValue = allGiftCards.reduce(
-      (sum, gc) => sum + parseFloat(gc.initial_value),
+      (sum, gc) => sum + parseFloat(gc.initial_value.toString()),
       0
     );
     const totalBalance = activeGiftCards.reduce(
-      (sum, gc) => sum + parseFloat(gc.balance),
+      (sum, gc) => sum + parseFloat(gc.balance.toString()),
       0
     );
     const totalRedeemed = redeemedGiftCards.reduce(
-      (sum, gc) => sum + parseFloat(gc.initial_value),
+      (sum, gc) => sum + parseFloat(gc.initial_value.toString()),
       0
     );
 

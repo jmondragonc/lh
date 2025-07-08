@@ -3,6 +3,7 @@ import {
   MedusaResponse
 } from "@medusajs/framework"
 import { Modules } from "@medusajs/framework/utils"
+import { ROLE_TYPES } from "../../../../modules/longhorn/models/role"
 
 export const GET = async (
   req: MedusaRequest,
@@ -31,9 +32,9 @@ export const GET = async (
             first_name: user.first_name,
             last_name: user.last_name,
             role_types: roleTypes,
-            is_super_admin: roleTypes.includes('super_admin'),
-            is_manager: roleTypes.includes('store_manager'),
-            is_staff: roleTypes.includes('store_staff')
+            is_super_admin: roleTypes.includes(ROLE_TYPES.SUPER_ADMIN),
+            is_manager: roleTypes.includes(ROLE_TYPES.STORE_MANAGER),
+            is_staff: roleTypes.includes(ROLE_TYPES.STORE_STAFF)
           }
         } catch (error) {
           return {

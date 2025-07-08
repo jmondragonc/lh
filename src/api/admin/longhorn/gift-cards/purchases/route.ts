@@ -24,31 +24,29 @@ export const GET = async (
     } = req.query
     
     // Construir filtros
-    const filters = []
-    const values = []
+    const filters: string[] = []
+    const values: any[] = []
     let paramIndex = 1
-    
-    // Filtros de fecha
+
     if (start_date) {
       filters.push(`p.created_at >= $${paramIndex}`)
       values.push(new Date(start_date as string).toISOString())
       paramIndex++
     }
-    
+
     if (end_date) {
       filters.push(`p.created_at <= $${paramIndex}`)
       values.push(new Date(end_date as string).toISOString())
       paramIndex++
     }
-    
-    // Filtros de estado
+
     if (status) {
       filters.push(`p.payment_status = $${paramIndex}`)
       values.push(status as string)
       paramIndex++
     }
-    
-    // Agregar filtro para compras no eliminadas
+
+    // Siempre filtrar por registros no eliminados
     filters.push(`p.deleted_at IS NULL`)
     
     // Construir WHERE clause
@@ -92,7 +90,8 @@ export const GET = async (
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
     
-    values.push(parseInt(limit as string), parseInt(offset as string))
+    values.push(parseInt(limit as string))
+    values.push(parseInt(offset as string))
     
     const result = await client.query(query, values)
     

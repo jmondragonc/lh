@@ -15,7 +15,12 @@ export const POST = async (
     console.log('=== POST /store/longhorn/gift-cards/[code]/redeem ===')
     
     const { code } = req.params
-    const { amount, order_id, customer_email } = req.body
+    const requestBody = req.body as {
+      amount: number
+      order_id: string
+      customer_email: string
+    }
+    const { amount, order_id, customer_email } = requestBody
     
     if (!code || !amount || !order_id || !customer_email) {
       return res.status(400).json({

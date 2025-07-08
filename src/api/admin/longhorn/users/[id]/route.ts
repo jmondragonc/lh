@@ -59,10 +59,23 @@ export const PUT = async (
     const longhornService = req.scope.resolve("longhorn");
 
     // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
-    const currentUserId = req.longhornAuth.userId;
+    const currentUserId = req.longhornAuth?.userId;
+    
+    if (!currentUserId) {
+      return res.status(401).json({
+        message: "Authentication required"
+      })
+    }
     //console.log('✅ Current user ID del middleware seguro:', currentUserId)
 
-    const { first_name, last_name, email, avatar_url, metadata } = req.body;
+    const requestBody = req.body as {
+      first_name?: string
+      last_name?: string
+      email?: string
+      avatar_url?: string
+      metadata?: Record<string, any>
+    }
+    const { first_name, last_name, email, avatar_url, metadata } = requestBody;
 
     // console.log('🔍 PUT UPDATE - Received data:', {
     //   first_name,
@@ -130,7 +143,13 @@ export const DELETE = async (
     const authModuleService = req.scope.resolve(Modules.AUTH);
 
     // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
-    const currentUserId = req.longhornAuth.userId;
+    const currentUserId = req.longhornAuth?.userId;
+    
+    if (!currentUserId) {
+      return res.status(401).json({
+        message: "Authentication required"
+      })
+    }
 
     // console.log('🔒 SECURITY CHECK - User Deletion')
     // console.log('Current user:', currentUserId)
@@ -184,7 +203,7 @@ export const DELETE = async (
           await longhornService.removeUserRole(
             id,
             userRole.role_id,
-            userRole.store_id || null
+            userRole.store_id || undefined
           );
         }
         //console.log('User roles removed successfully')
@@ -220,7 +239,7 @@ export const DELETE = async (
       const user = await userModuleService.retrieveUser(id);
       if (user?.metadata?.auth_identity_id) {
         await authModuleService.deleteAuthIdentities([
-          user.metadata.auth_identity_id,
+          user.metadata.auth_identity_id as string,
         ]);
         //console.log('Auth identity removed successfully')
       } else {

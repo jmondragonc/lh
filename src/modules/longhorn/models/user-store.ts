@@ -7,7 +7,7 @@ const LonghornUserStore = model.define("LonghornUserStore", {
   is_active: model.boolean().default(true),
   metadata: model.json().nullable(),
 }).cascades({
-  delete: ["longhornStore"]
+  // delete: ["longhornStore"] // Comentado hasta resolver relaciones
 })
 
 export default LonghornUserStore

@@ -1,12 +1,15 @@
 import { loadEnv } from "@medusajs/framework/utils"
-import { createMedusaContainer } from "@medusajs/framework"
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
-async function seedRoles() {
+async function seedRoles(container?: any) {
   console.log("🌱 Starting roles seeding...")
 
-  const container = await createMedusaContainer()
+  if (!container) {
+    console.log("No container provided, skipping roles seeding")
+    return
+  }
+
   const longhornService = container.resolve("longhorn")
 
   try {

@@ -2,21 +2,23 @@ import {
   AuthenticatedMedusaRequest, 
   MedusaResponse
 } from "@medusajs/framework"
-import type { LonghornAuthenticatedRequest } from "../../../../types/longhorn-auth"
+import type { LonghornGenerateGiftCardCodeRequest } from "../../../../../types/longhorn-request-types"
 
 /**
  * POST /admin/longhorn/gift-cards/generate-code
  * Genera un código único para gift card
  */
 export const POST = async (
-  req: LonghornAuthenticatedRequest,
+  req: LonghornGenerateGiftCardCodeRequest,
   res: MedusaResponse
 ) => {
   try {
     console.log('=== POST /admin/longhorn/gift-cards/generate-code ===')
+    console.log('Request body:', req.body)
+    
+    const { prefix = "GIFT" } = req.body
     
     const longhornService = req.scope.resolve("longhorn")
-    const { prefix = "GIFT" } = req.body
     
     // Generar código único
     const code = await longhornService.generateUniqueGiftCardCode(prefix)

@@ -3,7 +3,7 @@ import {
   MedusaResponse,
 } from "@medusajs/framework";
 import { ROLE_TYPES } from "../../../../modules/longhorn/models/role";
-import type { LonghornAuthenticatedRequest } from "../../../../types/longhorn-auth";
+import type { LonghornAuthenticatedRequest, LonghornCreateRoleRequest } from "../../../../types/longhorn-request-types";
 
 export const GET = async (
   req: LonghornAuthenticatedRequest,
@@ -17,7 +17,13 @@ export const GET = async (
     // console.log("Query params:", { type, is_active, simulate_user });
 
     // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
-    const currentUserId = req.longhornAuth.userId;
+    const currentUserId = req.longhornAuth?.userId;
+    
+    if (!currentUserId || !req.longhornAuth) {
+      return res.status(401).json({
+        message: "Authentication required"
+      })
+    }
 
     // Solo permitir simulate_user en desarrollo (ya validado por middleware)
     const finalUserId =
@@ -88,7 +94,7 @@ export const GET = async (
 };
 
 export const POST = async (
-  req: LonghornAuthenticatedRequest,
+  req: LonghornCreateRoleRequest,
   res: MedusaResponse
 ) => {
   try {
@@ -107,7 +113,13 @@ export const POST = async (
     // console.log('Request data:', { name, type, description, simulate_user })
 
     // OBTENER USUARIO ACTUAL DEL MIDDLEWARE SEGURO
-    const currentUserId = req.longhornAuth.userId;
+    const currentUserId = req.longhornAuth?.userId;
+    
+    if (!currentUserId || !req.longhornAuth) {
+      return res.status(401).json({
+        message: "Authentication required"
+      })
+    }
 
     // Solo permitir simulate_user en desarrollo (ya validado por middleware)
     const finalUserId =

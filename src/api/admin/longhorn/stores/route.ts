@@ -33,17 +33,29 @@ export const POST = async (
   try {
     const longhornService = req.scope.resolve("longhorn")
     
-    const { 
-      name, 
-      code, 
-      description, 
-      address, 
-      phone, 
-      email, 
-      business_hours, 
-      delivery_settings, 
-      metadata 
-    } = req.body
+    const body = req.body as {
+      name: string
+      code: string
+      description?: string
+      address?: string
+      phone?: string
+      email?: string
+      business_hours?: Record<string, any>
+      delivery_settings?: Record<string, any>
+      metadata?: Record<string, any>
+    }
+    
+    const {
+      name,
+      code,
+      description,
+      address,
+      phone,
+      email,
+      business_hours,
+      delivery_settings,
+      metadata
+    } = body
 
     // Validar datos requeridos
     if (!name || !code) {
