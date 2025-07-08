@@ -1078,8 +1078,211 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "Obtener Compras Online",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/purchases?status=&start_date=&end_date=&limit=50&offset=0",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "purchases"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "",
+              "description": "Estado de la compra: pending, completed, failed, cancelled"
+            },
+            {
+              "key": "start_date",
+              "value": "",
+              "description": "Fecha de inicio (YYYY-MM-DD)"
+            },
+            {
+              "key": "end_date",
+              "value": "",
+              "description": "Fecha de fin (YYYY-MM-DD)"
+            },
+            {
+              "key": "limit",
+              "value": "50",
+              "description": "Número de resultados"
+            },
+            {
+              "key": "offset",
+              "value": "0",
+              "description": "Offset para paginación"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener Estadísticas de Ventas",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/longhorn/gift-cards/sales-stats?period=last_30_days",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "longhorn",
+            "gift-cards",
+            "sales-stats"
+          ],
+          "query": [
+            {
+              "key": "period",
+              "value": "last_30_days",
+              "description": "Período: last_7_days, last_30_days, last_90_days, last_year"
+            }
+          ]
+        }
+      },
+      "response": []
     }
   ]
+    },
+    {
+      "name": "Store API - Compra de Gift Cards",
+      "item": [
+        {
+          "name": "Comprar Gift Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.00,\n  \"currency\": \"PEN\",\n  \"recipient_email\": \"destinatario@email.com\",\n  \"recipient_name\": \"Juan Pérez\",\n  \"sender_name\": \"María González\",\n  \"sender_email\": \"maria@email.com\",\n  \"message\": \"¡Feliz cumpleaños!\",\n  \"delivery_date\": \"2025-07-15T18:00:00Z\",\n  \"payment_method\": \"stripe\",\n  \"customer_info\": {\n    \"first_name\": \"María\",\n    \"last_name\": \"González\",\n    \"email\": \"maria@email.com\",\n    \"phone\": \"+51987654321\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/store/longhorn/gift-cards/purchase",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "store",
+                "longhorn",
+                "gift-cards",
+                "purchase"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validar Gift Card",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/store/longhorn/gift-cards/LH-GIFT-2025-ABC123/validate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "store",
+                "longhorn",
+                "gift-cards",
+                "LH-GIFT-2025-ABC123",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Redimir Gift Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 25.00,\n  \"order_id\": \"order_789\",\n  \"customer_email\": \"cliente@email.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/store/longhorn/gift-cards/LH-GIFT-2025-ABC123/redeem",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "store",
+                "longhorn",
+                "gift-cards",
+                "LH-GIFT-2025-ABC123",
+                "redeem"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener Opciones de Compra",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/store/longhorn/gift-cards/purchase-options",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "store",
+                "longhorn",
+                "gift-cards",
+                "purchase-options"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }
